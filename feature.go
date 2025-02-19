@@ -1,6 +1,9 @@
 package osm
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 const (
 	// Constants for the different object types.
@@ -84,4 +87,23 @@ func (ids FeatureIDs) Counts() (nodes, ways, relations int) {
 		}
 	}
 	return
+}
+
+type featureIDsSort FeatureIDs
+
+// Sort will order the ids by type, node, way, relation, changeset and then id.
+func (ids FeatureIDs) Sort() {
+	sort.Sort(featureIDsSort(ids))
+}
+
+func (ids featureIDsSort) Len() int {
+	return len(ids)
+}
+
+func (ids featureIDsSort) Swap(i, j int) {
+	ids[i], ids[j] = ids[j], ids[i]
+}
+
+func (ids featureIDsSort) Less(i, j int) bool {
+	return ids[i] < ids[j]
 }
