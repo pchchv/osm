@@ -1,5 +1,7 @@
 package osm
 
+import "fmt"
+
 const (
 	// Constants for the different object types.
 	TypeNode      Type = "node"
@@ -44,4 +46,24 @@ func (id FeatureID) Type() Type {
 	}
 
 	return ""
+}
+
+// String returns "type/ref" for the feature.
+func (id FeatureID) String() string {
+	t := Type("unknown")
+	switch id & typeMask {
+	case nodeMask:
+		t = TypeNode
+	case wayMask:
+		t = TypeWay
+	case relationMask:
+		t = TypeRelation
+	}
+	return fmt.Sprintf("%s/%d", t, id.Ref())
+}
+
+// Ref return the ID reference for the feature.
+// Not unique without the type.
+func (id FeatureID) Ref() int64 {
+	return int64((id & refMask) >> versionBits)
 }
