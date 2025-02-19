@@ -17,3 +17,14 @@ func (id ElementID) Type() Type {
 		panic("unknown type")
 	}
 }
+
+// Version returns the version of the element.
+func (id ElementID) Version() int {
+	return int(id & (versionMask))
+}
+
+// Ref returns the ID reference for the element.
+// Not unique without the type.
+func (id ElementID) Ref() int64 {
+	return int64((id & refMask) >> versionBits)
+}
