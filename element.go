@@ -28,3 +28,14 @@ func (id ElementID) Version() int {
 func (id ElementID) Ref() int64 {
 	return int64((id & refMask) >> versionBits)
 }
+
+// String returns "type/ref:version" for the element.
+func (id ElementID) String() (v string) {
+	if id.Version() == 0 {
+		v = "-"
+	} else {
+		v = fmt.Sprintf("%d", id.Version())
+	}
+
+	return fmt.Sprintf("%s/%d:", id.Type(), id.Ref()) + v
+}
