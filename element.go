@@ -49,3 +49,23 @@ func (id ElementID) ObjectID() ObjectID {
 func (id ElementID) FeatureID() FeatureID {
 	return FeatureID(id & featureMask)
 }
+
+// NodeID returns the id of this feature as a node id.
+// The function will panic if this element is not of TypeNode.
+func (id ElementID) NodeID() NodeID {
+	if id&nodeMask != nodeMask {
+		panic(fmt.Sprintf("not a node: %v", id))
+	}
+
+	return NodeID(id.Ref())
+}
+
+// WayID returns the id of this feature as a way id.
+// The function will panic if this element is not of TypeWay.
+func (id ElementID) WayID() WayID {
+	if id&wayMask != wayMask {
+		panic(fmt.Sprintf("not a way: %v", id))
+	}
+
+	return WayID(id.Ref())
+}
