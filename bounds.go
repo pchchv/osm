@@ -7,3 +7,11 @@ type Bounds struct {
 	MinLon float64 `xml:"minlon,attr"`
 	MaxLon float64 `xml:"maxlon,attr"`
 }
+
+// ObjectID returns the bounds type but with 0 id.
+// Since id doesn't make sense.
+// This is here to implement the Object interface since it technically is an osm object type.
+// It also allows bounds to be returned via the osmxml.Scanner.
+func (b *Bounds) ObjectID() ObjectID {
+	return ObjectID(boundsMask)
+}
