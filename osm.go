@@ -1,5 +1,5 @@
 package osm
 
-type typeStruct struct {
+type typeS struct {
 	Type string `json:"type"`
 }
