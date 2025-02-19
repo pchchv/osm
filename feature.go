@@ -27,3 +27,21 @@ const (
 // Type is the type of different osm objects,
 // ie. node, way, relation, changeset, note, user.
 type Type string
+
+// FeatureID is an identifier for a feature in OSM.
+// It is meant to represent all the versions of a given element.
+type FeatureID int64
+
+// Type returns the Type of the feature, or empty string for invalid type.
+func (id FeatureID) Type() Type {
+	switch id & typeMask {
+	case nodeMask:
+		return TypeNode
+	case wayMask:
+		return TypeWay
+	case relationMask:
+		return TypeRelation
+	}
+
+	return ""
+}
