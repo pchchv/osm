@@ -18,6 +18,13 @@ var (
 	}
 )
 
+type nocopyRawMessage []byte
+
+func (m *nocopyRawMessage) UnmarshalJSON(data []byte) error {
+	*m = data
+	return nil
+}
+
 func marshalJSON(v interface{}) ([]byte, error) {
 	if CustomJSONMarshaler == nil {
 		return json.Marshal(v)
