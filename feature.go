@@ -67,3 +67,21 @@ func (id FeatureID) String() string {
 func (id FeatureID) Ref() int64 {
 	return int64((id & refMask) >> versionBits)
 }
+
+// FeatureIDs is a slice of FeatureIDs with some helpers on top.
+type FeatureIDs []FeatureID
+
+// Counts returns the number of each type of feature in the set of ids.
+func (ids FeatureIDs) Counts() (nodes, ways, relations int) {
+	for _, id := range ids {
+		switch id.Type() {
+		case TypeNode:
+			nodes++
+		case TypeWay:
+			ways++
+		case TypeRelation:
+			relations++
+		}
+	}
+	return
+}
