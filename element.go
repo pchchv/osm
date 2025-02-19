@@ -39,3 +39,13 @@ func (id ElementID) String() (v string) {
 
 	return fmt.Sprintf("%s/%d:", id.Type(), id.Ref()) + v
 }
+
+// ObjectID is a helper to convert the id to an object id.
+func (id ElementID) ObjectID() ObjectID {
+	return ObjectID(id)
+}
+
+// FeatureID returns the feature id for the element id. i.e removing the version.
+func (id ElementID) FeatureID() FeatureID {
+	return FeatureID(id & featureMask)
+}
