@@ -159,3 +159,70 @@ func TestBoundUnion(t *testing.T) {
 		t.Errorf("union incorrect: %v != %v", b, expected)
 	}
 }
+
+func TestBoundIsEmpty(t *testing.T) {
+	cases := []struct {
+		name   string
+		bound  Bound
+		result bool
+	}{
+		{
+			name:   "regular bound",
+			bound:  Bound{Min: Point{5, 7}, Max: Point{6, 8}},
+			result: false,
+		},
+		{
+			name:   "single point",
+			bound:  Bound{Min: Point{5, 7}, Max: Point{6, 8}},
+			result: false,
+		},
+		{
+			name:   "horizontal bar",
+			bound:  Bound{Min: Point{5, 7}, Max: Point{6, 8}},
+			result: false,
+		},
+		{
+			name:   "vertical bar",
+			bound:  Bound{Min: Point{5, 7}, Max: Point{6, 8}},
+			result: false,
+		},
+		{
+			name:   "vertical bar",
+			bound:  Bound{Min: Point{5, 7}, Max: Point{6, 8}},
+			result: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if v := tc.bound.IsEmpty(); v != tc.result {
+				t.Errorf("incorrect result: %v != %v", v, tc.result)
+			}
+
+		})
+	}
+
+	// negative/malformed area
+	bound := Bound{Min: Point{1, 1}, Max: Point{0, 2}}
+	if !bound.IsEmpty() {
+		t.Error("expected true, got false")
+	}
+
+	// negative/malformed area
+	bound = Bound{Min: Point{1, 3}, Max: Point{1, 2}}
+	if !bound.IsEmpty() {
+		t.Error("expected true, got false")
+	}
+}
+
+func TestBoundIsZero(t *testing.T) {
+	bound := Bound{Min: Point{1, 2}, Max: Point{1, 2}}
+	if bound.IsZero() {
+		t.Error("expected false, got true")
+	}
+
+	bound = Bound{}
+	if !bound.IsZero() {
+		t.Error("expected true, got false")
+	}
+}
