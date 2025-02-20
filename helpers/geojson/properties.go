@@ -5,6 +5,16 @@ import "fmt"
 // Properties defines the feature properties with some helper methods.
 type Properties map[string]interface{}
 
+// Clone returns a shallow copy of the properties.
+func (p Properties) Clone() Properties {
+	n := make(Properties, len(p)+3)
+	for k, v := range p {
+		n[k] = v
+	}
+
+	return n
+}
+
 // MustInt guarantees the return of an `int`
 // (with optional default).
 // This function useful when you explicitly want a
