@@ -47,3 +47,21 @@ func (b Bound) Right() float64 {
 func (b Bound) Left() float64 {
 	return b.Min[0]
 }
+
+// LeftTop returns the upper left point of the bound.
+func (b Bound) LeftTop() Point {
+	return Point{b.Left(), b.Top()}
+}
+
+// RightBottom return the lower right point of the bound.
+func (b Bound) RightBottom() Point {
+	return Point{b.Right(), b.Bottom()}
+}
+
+// Center returns the center of the bounds by "averaging" the x and y coords.
+func (b Bound) Center() Point {
+	return Point{
+		(b.Min[0] + b.Max[0]) / 2.0,
+		(b.Min[1] + b.Max[1]) / 2.0,
+	}
+}
