@@ -65,3 +65,30 @@ func (b Bound) Center() Point {
 		(b.Min[1] + b.Max[1]) / 2.0,
 	}
 }
+
+// Contains determines if the point is within the bound.
+// Points on the boundary are considered within.
+func (b Bound) Contains(point Point) bool {
+	if point[1] < b.Min[1] || b.Max[1] < point[1] {
+		return false
+	}
+
+	if point[0] < b.Min[0] || b.Max[0] < point[0] {
+		return false
+	}
+
+	return true
+}
+
+// Intersects determines if two bounds intersect.
+// Returns true if they are touching.
+func (b Bound) Intersects(bound Bound) bool {
+	if (b.Max[0] < bound.Min[0]) ||
+		(b.Min[0] > bound.Max[0]) ||
+		(b.Max[1] < bound.Min[1]) ||
+		(b.Min[1] > bound.Max[1]) {
+		return false
+	}
+
+	return true
+}
