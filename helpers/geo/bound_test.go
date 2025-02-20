@@ -122,3 +122,40 @@ func TestBoundIntersects(t *testing.T) {
 		t.Errorf("expected to intersect")
 	}
 }
+
+func TestBoundExtend(t *testing.T) {
+	bound := Bound{Min: Point{0, 0}, Max: Point{3, 5}}
+	if r := bound.Extend(Point{2, 1}); !r.Equal(bound) {
+		t.Errorf("extend incorrect: %v != %v", r, bound)
+	}
+
+	answer := Bound{Min: Point{0, -1}, Max: Point{6, 5}}
+	if r := bound.Extend(Point{6, -1}); !r.Equal(answer) {
+		t.Errorf("extend incorrect: %v != %v", r, answer)
+	}
+}
+
+func TestBoundPad(t *testing.T) {
+	bound := Bound{Min: Point{1, 1}, Max: Point{2, 2}}
+	bound = bound.Pad(0.5)
+	if !bound.Min.Equal(Point{0.5, 0.5}) {
+		t.Errorf("incorrect min: %v", bound.Min)
+	}
+
+	if !bound.Max.Equal(Point{2.5, 2.5}) {
+		t.Errorf("incorrect min: %v", bound.Max)
+	}
+}
+
+func TestBoundUnion(t *testing.T) {
+	b1 := Bound{Min: Point{0, 0}, Max: Point{1, 1}}
+	b2 := Bound{Min: Point{0, 0}, Max: Point{2, 2}}
+	expected := Bound{Min: Point{0, 0}, Max: Point{2, 2}}
+	if b := b1.Union(b2); !b.Equal(expected) {
+		t.Errorf("union incorrect: %v != %v", b, expected)
+	}
+
+	if b := b2.Union(b1); !b.Equal(expected) {
+		t.Errorf("union incorrect: %v != %v", b, expected)
+	}
+}
