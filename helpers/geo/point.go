@@ -44,3 +44,8 @@ func (p Point) GeoJSONType() string {
 func (p Point) Dimensions() int {
 	return 0
 }
+
+// Bound returns a single point bound of the point.
+func (p Point) Bound() Bound {
+	return Bound{p, p}
+}
