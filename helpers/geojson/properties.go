@@ -62,3 +62,53 @@ func (p Properties) MustFloat64(key string, def ...float64) float64 {
 
 	panic("property not found")
 }
+
+// MustString guarantees the return of a `string`
+// (with optional default).
+// This function useful when you explicitly want a
+// `string` in a single value return context, ie:
+//
+//	myFunc(f.Properties.MustString("param1"), f.Properties.MustString("optional_param", "default"))
+//
+// Will panic if the value is present but not a string.
+func (p Properties) MustString(key string, def ...string) string {
+	v := p[key]
+	if s, ok := v.(string); ok {
+		return s
+	}
+
+	if v != nil {
+		panic(fmt.Sprintf("not a string, but a %T: %v", v, v))
+	}
+
+	if len(def) > 0 {
+		return def[0]
+	}
+
+	panic("property not found")
+}
+
+// MustBool guarantees the return of a `bool`
+// (with optional default).
+// This function useful when you explicitly want a
+// `bool` in a single value return context, ie:
+//
+//	myFunc(f.Properties.MustBool("param1"), f.Properties.MustBool("optional_param", true))
+//
+// Will panic if the value is present but not a bool.
+func (p Properties) MustBool(key string, def ...bool) bool {
+	v := p[key]
+	if b, ok := v.(bool); ok {
+		return b
+	}
+
+	if v != nil {
+		panic(fmt.Sprintf("not a bool, but a %T: %v", v, v))
+	}
+
+	if len(def) > 0 {
+		return def[0]
+	}
+
+	panic("property not found")
+}
