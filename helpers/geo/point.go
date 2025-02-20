@@ -34,3 +34,13 @@ func (p Point) X() float64 {
 func (p Point) Lat() float64 {
 	return p[1]
 }
+
+// GeoJSONType returns the GeoJSON type for the object.
+func (p Point) GeoJSONType() string {
+	return "Point"
+}
+
+// Dimensions returns 0 because a point is a 0d object.
+func (p Point) Dimensions() int {
+	return 0
+}
