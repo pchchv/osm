@@ -1,5 +1,7 @@
 package geo
 
+import "math"
+
 var emptyBound = Bound{Min: Point{1, 1}, Max: Point{-1, -1}}
 
 // Bound represents a closed box or rectangle.
@@ -91,4 +93,34 @@ func (b Bound) Intersects(bound Bound) bool {
 	}
 
 	return true
+}
+
+// Extend grows the bound to include the new point.
+func (b Bound) Extend(point Point) Bound {
+	// already included, no big deal
+	if b.Contains(point) {
+		return b
+	}
+
+	return Bound{
+		Min: Point{
+			math.Min(b.Min[0], point[0]),
+			math.Min(b.Min[1], point[1]),
+		},
+		Max: Point{
+			math.Max(b.Max[0], point[0]),
+			math.Max(b.Max[1], point[1]),
+		},
+	}
+}
+
+// Pad extends the bound in all directions by the given value.
+func (b Bound) Pad(d float64) Bound {
+	b.Min[0] -= d
+	b.Min[1] -= d
+
+	b.Max[0] += d
+	b.Max[1] += d
+
+	return b
 }
