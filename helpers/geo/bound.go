@@ -124,3 +124,28 @@ func (b Bound) Pad(d float64) Bound {
 
 	return b
 }
+
+// Union extends this bound to contain the union of this and the given bound.
+func (b Bound) Union(other Bound) Bound {
+	if !other.IsEmpty() {
+		b = b.Extend(other.Min)
+		b = b.Extend(other.Max)
+		b = b.Extend(other.LeftTop())
+		b = b.Extend(other.RightBottom())
+	}
+
+	return b
+}
+
+// IsEmpty returns true if it contains zero area or
+// if it's in some malformed negative state where the
+// left point is larger than the right.
+// This can be caused by padding too much negative.
+func (b Bound) IsEmpty() bool {
+	return b.Min[0] > b.Max[0] || b.Min[1] > b.Max[1]
+}
+
+// IsZero return true if the bound just includes just null island.
+func (b Bound) IsZero() bool {
+	return b.Max == Point{} && b.Min == Point{}
+}
