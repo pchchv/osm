@@ -14,3 +14,25 @@ func NewBBox(b geo.Bound) BBox {
 		b.Max[0], b.Max[1],
 	}
 }
+
+// Valid checks if the bbox is present and has at least 4 elements.
+func (bb BBox) Valid() bool {
+	if bb == nil {
+		return false
+	}
+
+	return len(bb) >= 4 && len(bb)%2 == 0
+}
+
+// Bound returns the geo.Bound for the BBox.
+func (bb BBox) Bound() geo.Bound {
+	if !bb.Valid() {
+		return geo.Bound{}
+	}
+
+	mid := len(bb) / 2
+	return geo.Bound{
+		Min: geo.Point{bb[0], bb[1]},
+		Max: geo.Point{bb[mid], bb[mid+1]},
+	}
+}
