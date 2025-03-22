@@ -84,3 +84,17 @@ func (id ElementID) RelationID() RelationID {
 
 // ElementIDs is a list of element ids with helper functions on top.
 type ElementIDs []ElementID
+
+type elementIDsSort ElementIDs
+
+func (ids elementIDsSort) Len() int {
+	return len(ids)
+}
+
+func (ids elementIDsSort) Swap(i, j int) {
+	ids[i], ids[j] = ids[j], ids[i]
+}
+
+func (ids elementIDsSort) Less(i, j int) bool {
+	return ids[i] < ids[j]
+}
