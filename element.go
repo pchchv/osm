@@ -1,5 +1,7 @@
 package osm
 
+import "fmt"
+
 // ElementID is a unique key for an osm element.
 // It contains the type, id and version information.
 type ElementID int64
@@ -68,4 +70,14 @@ func (id ElementID) WayID() WayID {
 	}
 
 	return WayID(id.Ref())
+}
+
+// RelationID returns the id of this feature as a relation id.
+// The function will panic if this element is not of TypeRelation.
+func (id ElementID) RelationID() RelationID {
+	if int64(id)&relationMask != relationMask {
+		panic(fmt.Sprintf("not a relation: %v", id))
+	}
+
+	return RelationID(id.Ref())
 }
