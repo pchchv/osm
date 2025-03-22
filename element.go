@@ -81,3 +81,6 @@ func (id ElementID) RelationID() RelationID {
 
 	return RelationID(id.Ref())
 }
+
+// ElementIDs is a list of element ids with helper functions on top.
+type ElementIDs []ElementID
