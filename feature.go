@@ -71,6 +71,26 @@ func (id FeatureID) Ref() int64 {
 	return int64((id & refMask) >> versionBits)
 }
 
+// ObjectID is a helper to convert the id to an object id.
+func (id FeatureID) ObjectID(v int) ObjectID {
+	return ObjectID(id.ElementID(v))
+}
+
+// ElementID is a helper to convert the id to an element id.
+func (id FeatureID) ElementID(v int) ElementID {
+	return ElementID(id | (versionMask & FeatureID(v)))
+}
+
+// NodeID returns the id of this feature as a node id.
+// Panics if this feature is not of TypeNode.
+func (id FeatureID) NodeID() NodeID {
+	if id&nodeMask != nodeMask {
+		panic(fmt.Sprintf("not a node: %v", id))
+	}
+
+	return NodeID(id.Ref())
+}
+
 // FeatureIDs is a slice of FeatureIDs with some helpers on top.
 type FeatureIDs []FeatureID
 
