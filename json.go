@@ -1,6 +1,9 @@
 package osm
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"encoding/xml"
+)
 
 var (
 	// CustomJSONMarshaler can be set, to use a different json marshaler than the default one in the stdlib.
@@ -22,6 +25,19 @@ type nocopyRawMessage []byte
 
 func (m *nocopyRawMessage) UnmarshalJSON(data []byte) error {
 	*m = data
+	return nil
+}
+
+// xmlNameJSONTypeNode is kind of a hack
+// to encode the proper json
+// object type attribute for this struct type.
+type xmlNameJSONTypeNode xml.Name
+
+func (x xmlNameJSONTypeNode) MarshalJSON() ([]byte, error) {
+	return []byte(`"node"`), nil
+}
+
+func (x xmlNameJSONTypeNode) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
