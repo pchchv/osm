@@ -41,6 +41,32 @@ func (x xmlNameJSONTypeNode) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// xmlNameJSONTypeWay is kind of a hack
+// to encode the proper json
+// object type attribute for this struct type.
+type xmlNameJSONTypeWay xml.Name
+
+func (x xmlNameJSONTypeWay) MarshalJSON() ([]byte, error) {
+	return []byte(`"way"`), nil
+}
+
+func (x xmlNameJSONTypeWay) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
+// xmlNameJSONTypeRel is kind of a hack
+// to encode the proper json
+// object type attribute for this struct type.
+type xmlNameJSONTypeRel xml.Name
+
+func (x xmlNameJSONTypeRel) MarshalJSON() ([]byte, error) {
+	return []byte(`"relation"`), nil
+}
+
+func (x xmlNameJSONTypeRel) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 func marshalJSON(v interface{}) ([]byte, error) {
 	if CustomJSONMarshaler == nil {
 		return json.Marshal(v)
