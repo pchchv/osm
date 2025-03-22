@@ -49,3 +49,6 @@ func (id ObjectID) String() string {
 
 	return fmt.Sprintf("%s/%d:%d", id.Type(), id.Ref(), id.Version())
 }
+
+// ObjectIDs is a slice of ObjectIDs with some helpers on top.
+type ObjectIDs []ObjectID
