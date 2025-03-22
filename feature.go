@@ -91,6 +91,26 @@ func (id FeatureID) NodeID() NodeID {
 	return NodeID(id.Ref())
 }
 
+// WayID returns the id of this feature as a way id.
+// Panics if this feature is not of TypeWay.
+func (id FeatureID) WayID() WayID {
+	if id&wayMask != wayMask {
+		panic(fmt.Sprintf("not a way: %v", id))
+	}
+
+	return WayID(id.Ref())
+}
+
+// RelationID returns the id of this feature as a relation id.
+// Panics if this feature is not of TypeRelation.
+func (id FeatureID) RelationID() RelationID {
+	if id&relationMask != relationMask {
+		panic(fmt.Sprintf("not a relation: %v", id))
+	}
+
+	return RelationID(id.Ref())
+}
+
 // FeatureIDs is a slice of FeatureIDs with some helpers on top.
 type FeatureIDs []FeatureID
 
