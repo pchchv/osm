@@ -1,6 +1,9 @@
 package osm
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 // ElementID is a unique key for an osm element.
 // It contains the type, id and version information.
@@ -84,6 +87,27 @@ func (id ElementID) RelationID() RelationID {
 
 // ElementIDs is a list of element ids with helper functions on top.
 type ElementIDs []ElementID
+
+// Counts returns the number of each type of element in the set of ids.
+func (ids ElementIDs) Counts() (nodes, ways, relations int) {
+	for _, id := range ids {
+		switch id & typeMask {
+		case nodeMask:
+			nodes++
+		case wayMask:
+			ways++
+		case relationMask:
+			relations++
+		}
+	}
+
+	return
+}
+
+// Sort orders the ids by type, node, way, relation, changeset, and then id.
+func (ids ElementIDs) Sort() {
+	sort.Sort(elementIDsSort(ids))
+}
 
 type elementIDsSort ElementIDs
 
