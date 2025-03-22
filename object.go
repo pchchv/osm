@@ -1,5 +1,7 @@
 package osm
 
+import "fmt"
+
 // ObjectID encodes the type and ref of an osm object,
 // e.g. nodes, ways, relations, changesets, notes and users.
 type ObjectID int64
@@ -31,4 +33,19 @@ func (id ObjectID) Type() Type {
 	default:
 		panic("unknown type")
 	}
+}
+
+// Ref returns the ID reference for the object.
+// Not unique without the type.
+func (id ObjectID) Ref() int64 {
+	return int64((id & refMask) >> versionBits)
+}
+
+// String returns "type/ref:version" for the object.
+func (id ObjectID) String() string {
+	if id.Version() == 0 {
+		return fmt.Sprintf("%s/%d:-", id.Type(), id.Ref())
+	}
+
+	return fmt.Sprintf("%s/%d:%d", id.Type(), id.Ref(), id.Version())
 }
