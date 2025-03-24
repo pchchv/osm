@@ -73,3 +73,24 @@ type NoteComment struct {
 	Text    string            `xml:"text" json:"text"`
 	HTML    string            `xml:"html" json:"html"`
 }
+
+// Note is information for other mappers dropped at a map location.
+type Note struct {
+	XMLName     xmlNameJSONTypeNote `xml:"note" json:"type"`
+	ID          NoteID              `xml:"id" json:"id"`
+	Lat         float64             `xml:"lat,attr" json:"lat"`
+	Lon         float64             `xml:"lon,attr" json:"lon"`
+	URL         string              `xml:"url" json:"url,omitempty"`
+	CommentURL  string              `xml:"comment_url" json:"comment_url,omitempty"`
+	CloseURL    string              `xml:"close_url" json:"close_url,omitempty"`
+	ReopenURL   string              `xml:"reopen_url" json:"reopen_url,omitempty"`
+	DateCreated Date                `xml:"date_created" json:"date_created"`
+	DateClosed  Date                `xml:"date_closed" json:"date_closed,omitempty"`
+	Status      NoteStatus          `xml:"status" json:"status,omitempty"`
+	Comments    []*NoteComment      `xml:"comments>comment" json:"comments"`
+}
+
+// ObjectID returns the object id of the note.
+func (n *Note) ObjectID() ObjectID {
+	return n.ID.ObjectID()
+}
