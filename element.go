@@ -1,13 +1,56 @@
 package osm
 
 import (
+	"errors"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 )
+
+// ErrScannerClosed is returned by scanner.Err() if the scanner is closed
+// and there are no other io or xml errors to report.
+var ErrScannerClosed = errors.New("osm: scanner closed by user")
 
 // ElementID is a unique key for an osm element.
 // It contains the type, id and version information.
 type ElementID int64
+
+// ParseElementID takes a string and tries to determine the element id from it.
+// The string must be formatted as "type/id:version",
+// the same as the result of the String method.
+func ParseElementID(s string) (ElementID, error) {
+	parts := strings.Split(s, "/")
+	if len(parts) != 2 {
+		return 0, fmt.Errorf("invalid element id: %v", s)
+	}
+
+	parts2 := strings.Split(parts[1], ":")
+	if l := len(parts2); l != 1 && l != 2 {
+		return 0, fmt.Errorf("invalid element id: %v", s)
+	}
+
+	ref, err := strconv.ParseInt(parts2[0], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid element id: %v: %v", s, err)
+	}
+
+	var version int
+	if len(parts2) == 2 && parts2[1] != "-" {
+		v, e := strconv.ParseInt(parts2[1], 10, 64)
+		if e != nil {
+			return 0, fmt.Errorf("invalid element id: %v: %v", s, err)
+		}
+		version = int(v)
+	}
+
+	fid, err := Type(parts[0]).FeatureID(ref)
+	if err != nil {
+		return 0, fmt.Errorf("invalid element id: %v: %v", s, err)
+	}
+
+	return fid.ElementID(version), nil
+}
 
 // Type returns the Type for the element.
 func (id ElementID) Type() Type {
