@@ -7,11 +7,12 @@ import (
 
 const dateLayout = "2006-01-02 15:04:05 MST"
 
-// Set of comment actions.
 var (
+	NoteOpen           NoteStatus        = "open"
+	NoteClosed         NoteStatus        = "closed"
 	NoteCommentOpened  NoteCommentAction = "opened"
-	NoteCommentComment NoteCommentAction = "commented"
 	NoteCommentClosed  NoteCommentAction = "closed"
+	NoteCommentComment NoteCommentAction = "commented"
 )
 
 // NoteID is the unique identifier for an osm note.
@@ -57,3 +58,6 @@ func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) (err error
 
 // NoteCommentAction are actions that a note comment took.
 type NoteCommentAction string
+
+// NoteStatus is the status of the note.
+type NoteStatus string
