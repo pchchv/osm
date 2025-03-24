@@ -1,6 +1,7 @@
 package osm
 
 import (
+	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -193,5 +194,31 @@ func TestElementIDs_Sort(t *testing.T) {
 		for i := range ids {
 			t.Logf("%d: %v", i, ids[i])
 		}
+	}
+}
+
+func BenchmarkElementID_Sort(b *testing.B) {
+	rand.New(rand.NewSource(1024))
+	tests := make([]ElementIDs, b.N)
+	for i := range tests {
+		ids := make(ElementIDs, 10000)
+		for j := range ids {
+			v := rand.Intn(20)
+			switch rand.Intn(4) {
+			case 0:
+				ids[j] = NodeID(rand.Int63n(int64(len(ids) / 10))).ElementID(v)
+			case 1:
+				ids[j] = WayID(rand.Int63n(int64(len(ids) / 10))).ElementID(v)
+			case 2:
+				ids[j] = RelationID(rand.Int63n(int64(len(ids) / 10))).ElementID(v)
+			}
+		}
+		tests[i] = ids
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		tests[n].Sort()
 	}
 }
