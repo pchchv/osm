@@ -75,3 +75,27 @@ func (os Objects) ObjectIDs() ObjectIDs {
 
 	return ids
 }
+
+// Scanner reads osm data from planet dump files.
+// It is based on the bufio.Scanner, common usage.
+// Scanners are not safe for parallel use.
+// One should feed the objects into their
+// own channel and have workers read from that.
+//
+//	s := scanner.New(r)
+//	defer s.Close()
+//
+//	for s.Next() {
+//		o := s.Object()
+//		// do something
+//	}
+//
+//	if s.Err() != nil {
+//		// scanner did not complete fully
+//	}
+type Scanner interface {
+	Scan() bool
+	Object() Object
+	Err() error
+	Close() error
+}
