@@ -176,3 +176,17 @@ func (ids elementIDsSort) Swap(i, j int) {
 func (ids elementIDsSort) Less(i, j int) bool {
 	return ids[i] < ids[j]
 }
+
+type elementsSort Elements
+
+func (es elementsSort) Len() int {
+	return len(es)
+}
+
+func (es elementsSort) Swap(i, j int) {
+	es[i], es[j] = es[j], es[i]
+}
+
+func (es elementsSort) Less(i, j int) bool {
+	return es[i].ElementID() < es[j].ElementID()
+}
