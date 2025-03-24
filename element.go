@@ -136,6 +136,9 @@ type Element interface {
 	TagMap() map[string]string // keeps waynodes and members from matching the interface
 }
 
+// Elements is a collection of the Element type.
+type Elements []Element
+
 // ElementIDs is a list of element ids with helper functions on top.
 type ElementIDs []ElementID
 
