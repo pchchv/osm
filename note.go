@@ -94,3 +94,6 @@ type Note struct {
 func (n *Note) ObjectID() ObjectID {
 	return n.ID.ObjectID()
 }
+
+// Notes is a collection of notes with some helpers attached.
+type Notes []*Note
