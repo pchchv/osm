@@ -54,3 +54,6 @@ type User struct {
 func (u *User) ObjectID() ObjectID {
 	return u.ID.ObjectID()
 }
+
+// Users is a collection of users with some helpers attached.
+type Users []*User
