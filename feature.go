@@ -33,6 +33,20 @@ const (
 // ie. node, way, relation, changeset, note, user.
 type Type string
 
+// FeatureID returns a feature id from the given type.
+func (t Type) FeatureID(ref int64) (FeatureID, error) {
+	switch t {
+	case TypeNode:
+		return NodeID(ref).FeatureID(), nil
+	case TypeWay:
+		return WayID(ref).FeatureID(), nil
+	case TypeRelation:
+		return RelationID(ref).FeatureID(), nil
+	default:
+		return 0, fmt.Errorf("unknown type: %v", t)
+	}
+}
+
 // FeatureID is an identifier for a feature in OSM.
 // It is meant to represent all the versions of a given element.
 type FeatureID int64
