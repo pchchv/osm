@@ -15,3 +15,12 @@ func (id NoteID) ObjectID() ObjectID {
 type Date struct {
 	time.Time
 }
+
+// MarshalJSON returns null if the date is empty.
+func (d Date) MarshalJSON() ([]byte, error) {
+	if d.IsZero() {
+		return []byte(`null`), nil
+	}
+
+	return marshalJSON(d.Time)
+}
