@@ -1,6 +1,11 @@
 package osm
 
-import "time"
+import (
+	"encoding/xml"
+	"time"
+)
+
+const dateLayout = "2006-01-02 15:04:05 MST"
 
 // NoteID is the unique identifier for an osm note.
 type NoteID int64
@@ -23,4 +28,22 @@ func (d Date) MarshalJSON() ([]byte, error) {
 	}
 
 	return marshalJSON(d.Time)
+}
+
+// MarshalXML is meant to encode the time.Time into the
+// osm note date formation of '2006-01-02 15:04:05 MST'.
+func (d Date) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.EncodeElement(d.Format(dateLayout), start)
+}
+
+// UnmarshalXML is meant to decode the osm note date formation of
+// '2006-01-02 15:04:05 MST' into a time.Time object.
+func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) (err error) {
+	var s string
+	if err = dec.DecodeElement(&s, &start); err != nil {
+		return
+	}
+
+	d.Time, err = time.Parse(dateLayout, s)
+	return err
 }
