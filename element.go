@@ -139,6 +139,41 @@ type Element interface {
 // Elements is a collection of the Element type.
 type Elements []Element
 
+// Sort orders the elements by
+// type, node, way, relation, changeset,
+// then id and lastly the version.
+func (es Elements) Sort() {
+	sort.Sort(elementsSort(es))
+}
+
+// ElementIDs returns a slice of the element ids of the elements.
+func (es Elements) ElementIDs() ElementIDs {
+	if len(es) == 0 {
+		return nil
+	}
+
+	ids := make(ElementIDs, 0, len(es))
+	for _, e := range es {
+		ids = append(ids, e.ElementID())
+	}
+
+	return ids
+}
+
+// FeatureIDs returns a slice of the feature ids of the elements.
+func (es Elements) FeatureIDs() FeatureIDs {
+	if len(es) == 0 {
+		return nil
+	}
+
+	ids := make(FeatureIDs, 0, len(es))
+	for _, e := range es {
+		ids = append(ids, e.FeatureID())
+	}
+
+	return ids
+}
+
 // ElementIDs is a list of element ids with helper functions on top.
 type ElementIDs []ElementID
 
