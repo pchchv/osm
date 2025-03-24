@@ -50,5 +50,12 @@ func (id ObjectID) String() string {
 	return fmt.Sprintf("%s/%d:%d", id.Type(), id.Ref(), id.Version())
 }
 
+// Object represents a Node, Way, Relation, Changeset, Note or User only.
+type Object interface {
+	ObjectID() ObjectID
+	private() // to ensure that **ID types do not implement this interface
+}
+
+
 // ObjectIDs is a slice of ObjectIDs with some helpers on top.
 type ObjectIDs []ObjectID
