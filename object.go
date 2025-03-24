@@ -50,12 +50,28 @@ func (id ObjectID) String() string {
 	return fmt.Sprintf("%s/%d:%d", id.Type(), id.Ref(), id.Version())
 }
 
+// ObjectIDs is a slice of ObjectIDs with some helpers on top.
+type ObjectIDs []ObjectID
+
 // Object represents a Node, Way, Relation, Changeset, Note or User only.
 type Object interface {
 	ObjectID() ObjectID
 	private() // to ensure that **ID types do not implement this interface
 }
 
+// Objects is a set of objects with some helpers
+type Objects []Object
 
-// ObjectIDs is a slice of ObjectIDs with some helpers on top.
-type ObjectIDs []ObjectID
+// ObjectIDs returns a slice of the object ids of the osm objects.
+func (os Objects) ObjectIDs() ObjectIDs {
+	if len(os) == 0 {
+		return nil
+	}
+
+	ids := make(ObjectIDs, 0, len(os))
+	for _, o := range os {
+		ids = append(ids, o.ObjectID())
+	}
+
+	return ids
+}
