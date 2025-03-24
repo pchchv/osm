@@ -3,6 +3,8 @@ package osm
 import (
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -50,6 +52,28 @@ func (t Type) FeatureID(ref int64) (FeatureID, error) {
 // FeatureID is an identifier for a feature in OSM.
 // It is meant to represent all the versions of a given element.
 type FeatureID int64
+
+// ParseFeatureID takes a string and tries to determine the feature id from it.
+// The string must be formatted at "type/id",
+// the same as the result of the String method.
+func ParseFeatureID(s string) (FeatureID, error) {
+	parts := strings.Split(s, "/")
+	if len(parts) != 2 {
+		return 0, fmt.Errorf("invalid feature id: %v", s)
+	}
+
+	n, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid feature id: %v: %v", s, err)
+	}
+
+	id, err := Type(parts[0]).FeatureID(n)
+	if err != nil {
+		return 0, fmt.Errorf("invalid feature id: %s: %v", s, err)
+	}
+
+	return id, nil
+}
 
 // Type returns the Type of the feature, or empty string for invalid type.
 func (id FeatureID) Type() Type {
