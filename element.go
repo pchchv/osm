@@ -128,6 +128,14 @@ func (id ElementID) RelationID() RelationID {
 	return RelationID(id.Ref())
 }
 
+// Element represents a Node, Way or Relation.
+type Element interface {
+	Object
+	ElementID() ElementID
+	FeatureID() FeatureID
+	TagMap() map[string]string // keeps waynodes and members from matching the interface
+}
+
 // ElementIDs is a list of element ids with helper functions on top.
 type ElementIDs []ElementID
 
