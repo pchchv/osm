@@ -61,3 +61,15 @@ type NoteCommentAction string
 
 // NoteStatus is the status of the note.
 type NoteStatus string
+
+// NoteComment is a comment on a note.
+type NoteComment struct {
+	XMLName xml.Name          `xml:"comment" json:"-"`
+	Date    Date              `xml:"date" json:"date"`
+	UserID  UserID            `xml:"uid" json:"uid,omitempty"`
+	User    string            `xml:"user" json:"user,omitempty"`
+	UserURL string            `xml:"user_url" json:"user_url,omitempty"`
+	Action  NoteCommentAction `xml:"action" json:"action"`
+	Text    string            `xml:"text" json:"text"`
+	HTML    string            `xml:"html" json:"html"`
+}
