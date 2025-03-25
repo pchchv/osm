@@ -18,3 +18,15 @@ func (id WayID) FeatureID() FeatureID {
 func (id WayID) ElementID(v int) ElementID {
 	return id.FeatureID().ElementID(v)
 }
+
+// WayNode is a short node used as part of ways and relations in the osm xml.
+type WayNode struct {
+	ID          NodeID      `xml:"ref,attr,omitempty"`
+	Version     int         `xml:"version,attr,omitempty"`
+	ChangesetID ChangesetID `xml:"changeset,attr,omitempty"`
+	Lat         float64     `xml:"lat,attr,omitempty"`
+	Lon         float64     `xml:"lon,attr,omitempty"`
+}
+
+// WayNodes represents a collection of way nodes.
+type WayNodes []WayNode
