@@ -1,6 +1,25 @@
 package osm
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sort"
+)
+
+// UninterestingTags are boring tags.
+// If an element only has these tags it does not usually need to be displayed.
+// For example, if a node with just these tags is part of a way,
+// it probably does not need its own icon along the way.
+var UninterestingTags = map[string]bool{
+	"source":            true,
+	"source_ref":        true,
+	"source:ref":        true,
+	"history":           true,
+	"attribution":       true,
+	"created_by":        true,
+	"tiger:county":      true,
+	"tiger:tlid":        true,
+	"tiger:upload_uuid": true,
+}
 
 // Tag is a key-value item attached to
 // osm nodes, ways and relations.
@@ -81,6 +100,22 @@ func (ts *Tags) UnmarshalJSON(data []byte) error {
 
 	*ts = tags
 	return nil
+}
+
+// SortByKeyValue will do an inplace sort of the tags.
+func (ts Tags) SortByKeyValue() {
+	sort.Sort(tagsSort(ts))
+}
+
+// AnyInteresting returns true if there is at last one interesting tag.
+func (ts Tags) AnyInteresting() bool {
+	for _, t := range ts {
+		if !UninterestingTags[t.Key] {
+			return true
+		}
+	}
+
+	return false
 }
 
 type tagsSort Tags
