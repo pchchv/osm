@@ -1,5 +1,7 @@
 package osm
 
+import "github.com/pchchv/geo"
+
 // WayID is the primary key of a way.
 // Way is uniquely identifiable by the id + version.
 type WayID int64
@@ -26,6 +28,22 @@ type WayNode struct {
 	ChangesetID ChangesetID `xml:"changeset,attr,omitempty"`
 	Lat         float64     `xml:"lat,attr,omitempty"`
 	Lon         float64     `xml:"lon,attr,omitempty"`
+}
+
+// Point returns the geo.Point location for the way node.
+// Will be (0, 0) if the way is not annotated.
+func (wn WayNode) Point() geo.Point {
+	return geo.Point{wn.Lon, wn.Lat}
+}
+
+// FeatureID returns the feature id of the way node.
+func (wn WayNode) FeatureID() FeatureID {
+	return wn.ID.FeatureID()
+}
+
+// ElementID returns the element id of the way node.
+func (wn WayNode) ElementID() ElementID {
+	return wn.ID.ElementID(wn.Version)
 }
 
 // WayNodes represents a collection of way nodes.
