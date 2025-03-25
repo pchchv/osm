@@ -39,3 +39,9 @@ func NewBoundsFromTile(t maptile.Tile) (*Bounds, error) {
 func (b *Bounds) ObjectID() ObjectID {
 	return ObjectID(boundsMask)
 }
+
+// ContainsNode returns true if the node is within the bound.
+// Uses inclusive intervals, ie. returns true if on the boundary.
+func (b *Bounds) ContainsNode(n *Node) bool {
+	return !(n.Lat < b.MinLat || n.Lat > b.MaxLat || n.Lon < b.MinLon || n.Lon > b.MaxLon)
+}
