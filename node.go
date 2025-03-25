@@ -79,3 +79,21 @@ func (n *Node) TagMap() map[string]string {
 
 // Nodes is a list of nodes with helper functions on top.
 type Nodes []*Node
+
+type nodesSort Nodes
+
+func (ns nodesSort) Len() int {
+	return len(ns)
+}
+
+func (ns nodesSort) Swap(i, j int) {
+	ns[i], ns[j] = ns[j], ns[i]
+}
+
+func (ns nodesSort) Less(i, j int) bool {
+	if ns[i].ID == ns[j].ID {
+		return ns[i].Version < ns[j].Version
+	}
+
+	return ns[i].ID < ns[j].ID
+}
