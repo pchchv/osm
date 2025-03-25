@@ -36,3 +36,18 @@ type Node struct {
 	Tags        Tags                `xml:"tag" json:"tags,omitempty"`
 	Committed   *time.Time          `xml:"committed,attr,omitempty" json:"committed,omitempty"` // the estimated time this object was committed and made visible in the central OSM database
 }
+
+// ObjectID returns the object id of the node.
+func (n *Node) ObjectID() ObjectID {
+	return n.ID.ObjectID(n.Version)
+}
+
+// FeatureID returns the feature id of the node.
+func (n *Node) FeatureID() FeatureID {
+	return n.ID.FeatureID()
+}
+
+// ElementID returns the element id of the node.
+func (n *Node) ElementID() ElementID {
+	return n.ID.ElementID(n.Version)
+}
