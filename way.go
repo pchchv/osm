@@ -48,3 +48,31 @@ func (wn WayNode) ElementID() ElementID {
 
 // WayNodes represents a collection of way nodes.
 type WayNodes []WayNode
+
+// MarshalJSON marshalles waynodes as an array of ids,
+// as defined by the overpass osmjson.
+func (wn WayNodes) MarshalJSON() ([]byte, error) {
+	a := make([]int64, 0, len(wn))
+	for _, n := range wn {
+		a = append(a, int64(n.ID))
+	}
+
+	return marshalJSON(a)
+}
+
+// UnmarshalJSON unmarshalles waynodes from an array of ids,
+// as defined by the overpass osmjson.
+func (wn *WayNodes) UnmarshalJSON(data []byte) error {
+	var a []int64
+	if err := unmarshalJSON(data, &a); err != nil {
+		return err
+	}
+
+	nodes := make(WayNodes, len(a))
+	for i, id := range a {
+		nodes[i].ID = NodeID(id)
+	}
+
+	*wn = nodes
+	return nil
+}
