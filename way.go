@@ -76,3 +76,35 @@ func (wn *WayNodes) UnmarshalJSON(data []byte) error {
 	*wn = nodes
 	return nil
 }
+
+// ElementIDs returns a list of element ids for the way nodes.
+func (wn WayNodes) ElementIDs() ElementIDs {
+	// add 1 to the memory length because a common use case is to append the way
+	ids := make(ElementIDs, len(wn), len(wn)+1)
+	for i, n := range wn {
+		ids[i] = n.ElementID()
+	}
+
+	return ids
+}
+
+// FeatureIDs returns a list of feature ids for the way nodes.
+func (wn WayNodes) FeatureIDs() FeatureIDs {
+	// add 1 to the memory length because a common use case is to append the way
+	ids := make(FeatureIDs, len(wn), len(wn)+1)
+	for i, n := range wn {
+		ids[i] = n.FeatureID()
+	}
+
+	return ids
+}
+
+// NodeIDs returns a list of node ids for the way nodes.
+func (wn WayNodes) NodeIDs() []NodeID {
+	ids := make([]NodeID, len(wn))
+	for i, n := range wn {
+		ids[i] = n.ID
+	}
+
+	return ids
+}
