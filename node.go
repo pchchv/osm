@@ -1,6 +1,10 @@
 package osm
 
-import "time"
+import (
+	"time"
+
+	"github.com/pchchv/geo"
+)
 
 // NodeID corresponds the primary key of a node.
 // The node id + version uniquely identify a node.
@@ -50,4 +54,25 @@ func (n *Node) FeatureID() FeatureID {
 // ElementID returns the element id of the node.
 func (n *Node) ElementID() ElementID {
 	return n.ID.ElementID(n.Version)
+}
+
+// Point returns the geo.Point location for the node.
+// Will be (0, 0) for "deleted" nodes.
+func (n *Node) Point() geo.Point {
+	return geo.Point{n.Lon, n.Lat}
+}
+
+// CommittedAt returns the best estimate on when this
+// element became was written/committed into the database.
+func (n *Node) CommittedAt() time.Time {
+	if n.Committed != nil {
+		return *n.Committed
+	}
+
+	return n.Timestamp
+}
+
+// TagMap returns the element tags as a key/value map.
+func (n *Node) TagMap() map[string]string {
+	return n.Tags.Map()
 }
