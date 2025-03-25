@@ -1,6 +1,7 @@
 package osm
 
 import (
+	"sort"
 	"time"
 
 	"github.com/pchchv/geo"
@@ -98,6 +99,22 @@ func (ns Nodes) ElementIDs() ElementIDs {
 	}
 
 	return r
+}
+
+// IDs returns the ids for all the ways.
+func (ns Nodes) IDs() []NodeID {
+	result := make([]NodeID, len(ns))
+	for i, n := range ns {
+		result[i] = n.ID
+	}
+
+	return result
+}
+
+// SortByIDVersion sorts a set of nodes
+// first by ID and then by version in ascending order.
+func (ns Nodes) SortByIDVersion() {
+	sort.Sort(nodesSort(ns))
 }
 
 type nodesSort Nodes
