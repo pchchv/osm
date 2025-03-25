@@ -32,3 +32,28 @@ func (ts Tags) Find(k string) string {
 
 	return ""
 }
+
+// FindTag returns the Tag for the given key.
+// Can be used to determine if a key exists,
+// even with an empty value.
+// Returns nil if not found.
+func (ts Tags) FindTag(k string) *Tag {
+	for _, t := range ts {
+		if t.Key == k {
+			return &t
+		}
+	}
+
+	return nil
+}
+
+// HasTag returns true if a tag exists for the given key.
+func (ts Tags) HasTag(k string) bool {
+	for _, t := range ts {
+		if t.Key == k {
+			return true
+		}
+	}
+
+	return false
+}
