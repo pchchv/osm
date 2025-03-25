@@ -82,3 +82,21 @@ func (ts *Tags) UnmarshalJSON(data []byte) error {
 	*ts = tags
 	return nil
 }
+
+type tagsSort Tags
+
+func (ts tagsSort) Len() int {
+	return len(ts)
+}
+
+func (ts tagsSort) Swap(i, j int) {
+	ts[i], ts[j] = ts[j], ts[i]
+}
+
+func (ts tagsSort) Less(i, j int) bool {
+	if ts[i].Key == ts[j].Key {
+		return ts[i].Value < ts[j].Value
+	}
+
+	return ts[i].Key < ts[j].Key
+}
