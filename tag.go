@@ -1,5 +1,7 @@
 package osm
 
+import "encoding/json"
+
 // Tag is a key-value item attached to
 // osm nodes, ways and relations.
 type Tag struct {
@@ -56,4 +58,27 @@ func (ts Tags) HasTag(k string) bool {
 	}
 
 	return false
+}
+
+// MarshalJSON marshals tags as a key/value object,
+// as defined by the overpass osmjson.
+func (ts Tags) MarshalJSON() ([]byte, error) {
+	return marshalJSON(ts.Map())
+}
+
+// UnmarshalJSON unmarshals tags from a key/value object,
+// as defined by the overpass osmjson.
+func (ts *Tags) UnmarshalJSON(data []byte) error {
+	o := make(map[string]string)
+	if err := json.Unmarshal(data, &o); err != nil {
+		return err
+	}
+
+	tags := make(Tags, 0, len(o))
+	for k, v := range o {
+		tags = append(tags, Tag{Key: k, Value: v})
+	}
+
+	*ts = tags
+	return nil
 }
