@@ -1,6 +1,10 @@
 package osm
 
-import "github.com/pchchv/geo"
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+)
 
 // WayID is the primary key of a way.
 // Way is uniquely identifiable by the id + version.
@@ -107,4 +111,40 @@ func (wn WayNodes) NodeIDs() []NodeID {
 	}
 
 	return ids
+}
+
+// Bound computes the geo.Bound for the given way nodes.
+func (wn WayNodes) Bound() geo.Bound {
+	b := geo.Bound{
+		Min: geo.Point{math.MaxFloat64, math.MaxFloat64},
+		Max: geo.Point{-math.MaxFloat64, -math.MaxFloat64},
+	}
+
+	for _, n := range wn {
+		b.Min[0] = math.Min(b.Min[0], n.Lon)
+		b.Max[0] = math.Max(b.Max[0], n.Lon)
+		b.Min[1] = math.Min(b.Min[1], n.Lat)
+		b.Max[1] = math.Max(b.Max[1], n.Lat)
+	}
+
+	return b
+}
+
+// Bounds computes the bounds for the given way nodes.
+func (wn WayNodes) Bounds() *Bounds {
+	b := &Bounds{
+		MinLat: math.MaxFloat64,
+		MaxLat: -math.MaxFloat64,
+		MinLon: math.MaxFloat64,
+		MaxLon: -math.MaxFloat64,
+	}
+
+	for _, n := range wn {
+		b.MinLat = math.Min(b.MinLat, n.Lat)
+		b.MaxLat = math.Max(b.MaxLat, n.Lat)
+		b.MinLon = math.Min(b.MinLon, n.Lon)
+		b.MaxLon = math.Max(b.MaxLon, n.Lon)
+	}
+
+	return b
 }
