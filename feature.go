@@ -49,6 +49,29 @@ func (t Type) FeatureID(ref int64) (FeatureID, error) {
 	}
 }
 
+// objectID returns an object id from the given type.
+func (t Type) objectID(ref int64, v int) (ObjectID, error) {
+	switch t {
+	case TypeNode:
+		return NodeID(ref).ObjectID(v), nil
+	case TypeWay:
+		return WayID(ref).ObjectID(v), nil
+	case TypeRelation:
+		return RelationID(ref).ObjectID(v), nil
+	case TypeChangeset:
+		return ChangesetID(ref).ObjectID(), nil
+	case TypeNote:
+		return NoteID(ref).ObjectID(), nil
+	case TypeUser:
+		return UserID(ref).ObjectID(), nil
+	case TypeBounds:
+		var b *Bounds
+		return b.ObjectID(), nil
+	default:
+		return 0, fmt.Errorf("unknown type: %v", t)
+	}
+}
+
 // FeatureID is an identifier for a feature in OSM.
 // It is meant to represent all the versions of a given element.
 type FeatureID int64
