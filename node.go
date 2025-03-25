@@ -80,6 +80,26 @@ func (n *Node) TagMap() map[string]string {
 // Nodes is a list of nodes with helper functions on top.
 type Nodes []*Node
 
+// FeatureIDs returns the feature ids for all the nodes.
+func (ns Nodes) FeatureIDs() FeatureIDs {
+	r := make(FeatureIDs, len(ns))
+	for i, n := range ns {
+		r[i] = n.FeatureID()
+	}
+
+	return r
+}
+
+// ElementIDs returns the element ids for all the nodes.
+func (ns Nodes) ElementIDs() ElementIDs {
+	r := make(ElementIDs, len(ns))
+	for i, n := range ns {
+		r[i] = n.ElementID()
+	}
+
+	return r
+}
+
 type nodesSort Nodes
 
 func (ns nodesSort) Len() int {
