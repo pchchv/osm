@@ -40,3 +40,29 @@ type Member struct {
 	// path of the way. Overpass returns xml like this.
 	Nodes WayNodes `xml:"nd" json:"nodes,omitempty"`
 }
+
+// FeatureID returns the feature id of the member.
+func (m Member) FeatureID() FeatureID {
+	switch m.Type {
+	case TypeNode:
+		return NodeID(m.Ref).FeatureID()
+	case TypeWay:
+		return WayID(m.Ref).FeatureID()
+	case TypeRelation:
+		return RelationID(m.Ref).FeatureID()
+	default:
+		panic("unknown type")
+	}
+}
+
+// ElementID returns the element id of the member.
+func (m Member) ElementID() ElementID {
+	return m.FeatureID().ElementID(m.Version)
+}
+
+// Point returns the geo.Point location for the member.
+// Will be (0, 0) if the relation is not annotated.
+// For way members this location is annotated as the "surface point".
+func (m Member) Point() geo.Point {
+	return geo.Point{m.Lon, m.Lat}
+}
