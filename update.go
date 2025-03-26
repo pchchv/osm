@@ -2,10 +2,17 @@ package osm
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
-var _ error = &UpdateIndexOutOfRangeError{}
+var (
+	// CommitInfoStart is the start time when the commit information is known.
+	// Any update.Timestamp >= this date is a committed time.
+	// Anything before this date is the element timestamp.
+	CommitInfoStart       = time.Date(2012, 9, 12, 9, 30, 3, 0, time.UTC)
+	_               error = &UpdateIndexOutOfRangeError{}
+)
 
 // Update is a change to children of a way or relation.
 // The child type, id, ref and/or role are the same as the child at the given index.
@@ -34,6 +41,16 @@ func (us Updates) UpTo(t time.Time) (result Updates) {
 	}
 
 	return
+}
+
+// SortByIndex sorts the updates by index in ascending order.
+func (us Updates) SortByIndex() {
+	sort.Sort(updatesSortIndex(us))
+}
+
+// SortByTimestamp sorts the updates by timestamp in ascending order.
+func (us Updates) SortByTimestamp() {
+	sort.Sort(updatesSortTS(us))
 }
 
 // UpdateIndexOutOfRangeError is return when
