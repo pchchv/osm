@@ -194,3 +194,24 @@ func (r *Relation) CommittedAt() time.Time {
 
 	return r.Timestamp
 }
+
+// Relations is a list of relations with some helper functions attached.
+type Relations []*Relation
+
+type relationsSort Relations
+
+func (rs relationsSort) Len() int {
+	return len(rs)
+}
+
+func (rs relationsSort) Swap(i, j int) {
+	rs[i], rs[j] = rs[j], rs[i]
+}
+
+func (rs relationsSort) Less(i, j int) bool {
+	if rs[i].ID == rs[j].ID {
+		return rs[i].Version < rs[j].Version
+	}
+
+	return rs[i].ID < rs[j].ID
+}
