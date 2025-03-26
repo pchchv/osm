@@ -1,6 +1,11 @@
 package osm
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+var _ error = &UpdateIndexOutOfRangeError{}
 
 // Update is a change to children of a way or relation.
 // The child type, id, ref and/or role are the same as the child at the given index.
@@ -29,6 +34,18 @@ func (us Updates) UpTo(t time.Time) (result Updates) {
 	}
 
 	return
+}
+
+// UpdateIndexOutOfRangeError is return when
+// applying an update to an object and the
+// update index is out of range.
+type UpdateIndexOutOfRangeError struct {
+	Index int
+}
+
+// Error returns a string representation of the error.
+func (e *UpdateIndexOutOfRangeError) Error() string {
+	return fmt.Sprintf("osm: index %d is out of range", e.Index)
 }
 
 type updatesSortTS Updates
