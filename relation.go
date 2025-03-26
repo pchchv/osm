@@ -1,6 +1,7 @@
 package osm
 
 import (
+	"sort"
 	"time"
 
 	"github.com/pchchv/geo"
@@ -216,6 +217,22 @@ func (rs Relations) ElementIDs() ElementIDs {
 	}
 
 	return result
+}
+
+// IDs returns the ids for all the relations.
+func (rs Relations) IDs() []RelationID {
+	result := make([]RelationID, len(rs))
+	for i, r := range rs {
+		result[i] = r.ID
+	}
+
+	return result
+}
+
+// SortByIDVersion will sort the set
+// of relations first by id and then version in ascending order.
+func (rs Relations) SortByIDVersion() {
+	sort.Sort(relationsSort(rs))
 }
 
 type relationsSort Relations
