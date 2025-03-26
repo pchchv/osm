@@ -1,6 +1,10 @@
 package osm
 
-import "github.com/pchchv/geo"
+import (
+	"time"
+
+	"github.com/pchchv/geo"
+)
 
 // RelationID is the primary key of a relation.
 // Relation is uniquely identifiable by the id + version.
@@ -99,4 +103,28 @@ func (ms Members) MarshalJSON() ([]byte, error) {
 	}
 
 	return marshalJSON([]Member(ms))
+}
+
+// Relation is an collection of nodes,
+// ways and other relations with some defining attributes.
+type Relation struct {
+	XMLName     xmlNameJSONTypeRel `xml:"relation" json:"type"`
+	ID          RelationID         `xml:"id,attr" json:"id"`
+	User        string             `xml:"user,attr" json:"user,omitempty"`
+	UserID      UserID             `xml:"uid,attr" json:"uid,omitempty"`
+	Visible     bool               `xml:"visible,attr" json:"visible"`
+	Version     int                `xml:"version,attr" json:"version,omitempty"`
+	ChangesetID ChangesetID        `xml:"changeset,attr" json:"changeset,omitempty"`
+	Timestamp   time.Time          `xml:"timestamp,attr" json:"timestamp,omitempty"`
+	Tags        Tags               `xml:"tag" json:"tags,omitempty"`
+	Members     Members            `xml:"member" json:"members"`
+	// Committed, is the estimated time this object was committed
+	// and made visible in the central OSM database.
+	Committed *time.Time `xml:"committed,attr,omitempty" json:"committed,omitempty"`
+	// Updates are changes to the members of this relation independent
+	// of an update to the relation itself. The OSM api allows a child
+	// to be updated without any changes to the parent.
+	Updates Updates `xml:"update,omitempty" json:"updates,omitempty"`
+	// Bounds are included by overpass, and maybe others
+	Bounds *Bounds `xml:"bounds,omitempty" json:"bounds,omitempty"`
 }
