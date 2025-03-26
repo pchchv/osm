@@ -143,3 +143,39 @@ func (r *Relation) FeatureID() FeatureID {
 func (r *Relation) ElementID() ElementID {
 	return r.ID.ElementID(r.Version)
 }
+
+// ApplyUpdatesUpTo applies the updates to this object upto and including the given time.
+func (r *Relation) ApplyUpdatesUpTo(t time.Time) error {
+	var notApplied []Update
+	for _, u := range r.Updates {
+		if u.Timestamp.After(t) {
+			notApplied = append(notApplied, u)
+			continue
+		}
+
+		if err := r.applyUpdate(u); err != nil {
+			return err
+		}
+	}
+
+	r.Updates = notApplied
+	return nil
+}
+
+// applyUpdate modifies the current relation and dictated by the given update.
+// Will return UpdateIndexOutOfRangeError if the update index is too large.
+func (r *Relation) applyUpdate(u Update) error {
+	if u.Index >= len(r.Members) {
+		return &UpdateIndexOutOfRangeError{Index: u.Index}
+	}
+
+	r.Members[u.Index].Version = u.Version
+	r.Members[u.Index].ChangesetID = u.ChangesetID
+	r.Members[u.Index].Lat = u.Lat
+	r.Members[u.Index].Lon = u.Lon
+	if u.Reverse {
+		r.Members[u.Index].Orientation *= -1
+	}
+
+	return nil
+}
