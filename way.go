@@ -64,6 +64,39 @@ func (w *Way) ElementID() ElementID {
 	return w.ID.ElementID(w.Version)
 }
 
+// ApplyUpdatesUpTo applies the updates to
+// this object upto and including the given time.
+func (w *Way) ApplyUpdatesUpTo(t time.Time) error {
+	var notApplied []Update
+	for _, u := range w.Updates {
+		if u.Timestamp.After(t) {
+			notApplied = append(notApplied, u)
+			continue
+		}
+
+		if err := w.applyUpdate(u); err != nil {
+			return err
+		}
+	}
+
+	w.Updates = notApplied
+	return nil
+}
+
+// applyUpdate modifies the current way and dictated by the given update.
+// Returns UpdateIndexOutOfRangeError if the update index is too large.
+func (w *Way) applyUpdate(u Update) error {
+	if u.Index >= len(w.Nodes) {
+		return &UpdateIndexOutOfRangeError{Index: u.Index}
+	}
+
+	w.Nodes[u.Index].Version = u.Version
+	w.Nodes[u.Index].ChangesetID = u.ChangesetID
+	w.Nodes[u.Index].Lat = u.Lat
+	w.Nodes[u.Index].Lon = u.Lon
+	return nil
+}
+
 // WayNode is a short node used as part of ways and relations in the osm xml.
 type WayNode struct {
 	ID          NodeID      `xml:"ref,attr,omitempty"`
