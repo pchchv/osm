@@ -30,3 +30,35 @@ func (us Updates) UpTo(t time.Time) (result Updates) {
 
 	return
 }
+
+type updatesSortTS Updates
+
+func (us updatesSortTS) Len() int {
+	return len(us)
+}
+
+func (us updatesSortTS) Swap(i, j int) {
+	us[i], us[j] = us[j], us[i]
+}
+
+func (us updatesSortTS) Less(i, j int) bool {
+	return us[i].Timestamp.Before(us[j].Timestamp)
+}
+
+type updatesSortIndex Updates
+
+func (us updatesSortIndex) Len() int {
+	return len(us)
+}
+
+func (us updatesSortIndex) Swap(i, j int) {
+	us[i], us[j] = us[j], us[i]
+}
+
+func (us updatesSortIndex) Less(i, j int) bool {
+	if us[i].Index != us[j].Index {
+		return us[i].Index < us[j].Index
+	}
+
+	return us[i].Timestamp.Before(us[j].Timestamp)
+}
