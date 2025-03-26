@@ -98,6 +98,56 @@ func (w *Way) CommittedAt() time.Time {
 	return w.Timestamp
 }
 
+// LineString converts the annotated nodes into a LineString datatype.
+func (w *Way) LineString() geo.LineString {
+	ls := make(geo.LineString, 0, len(w.Nodes))
+	for _, n := range w.Nodes {
+		if n.Version != 0 || n.Lon != 0 || n.Lat != 0 {
+			// if version is there, it is assumed to be annotated
+			// this assumption is used in many places
+			ls = append(ls, n.Point())
+		}
+	}
+
+	return ls
+}
+
+// LineStringAt returns the LineString from the annotated points at the given time.
+// It will apply to the updates upto and including the give time.
+func (w *Way) LineStringAt(t time.Time) geo.LineString {
+	// linestring with all the zeros
+	ls := make(geo.LineString, 0, len(w.Nodes))
+	for _, n := range w.Nodes {
+		ls = append(ls, n.Point())
+	}
+
+	for _, u := range w.Updates {
+		if u.Timestamp.After(t) {
+			break
+		}
+
+		if u.Index >= len(ls) {
+			continue
+		}
+
+		ls[u.Index][0] = u.Lon
+		ls[u.Index][1] = u.Lat
+	}
+
+	// remove all the zeros
+	var count int
+	for i := range ls {
+		if n := w.Nodes[i]; n.Version == 0 && n.Lon == 0 && n.Lat == 0 {
+			continue
+		}
+
+		ls[count] = ls[i]
+		count++
+	}
+
+	return ls[:count]
+}
+
 // applyUpdate modifies the current way and dictated by the given update.
 // Returns UpdateIndexOutOfRangeError if the update index is too large.
 func (w *Way) applyUpdate(u Update) error {
