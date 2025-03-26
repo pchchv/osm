@@ -69,3 +69,23 @@ func (m Member) Point() geo.Point {
 
 // Members represents an ordered list of relation members.
 type Members []Member
+
+// FeatureIDs returns the a list of feature ids for the members.
+func (ms Members) FeatureIDs() FeatureIDs {
+	ids := make(FeatureIDs, len(ms), len(ms)+1)
+	for i, m := range ms {
+		ids[i] = m.FeatureID()
+	}
+
+	return ids
+}
+
+// ElementIDs returns the a list of element ids for the members.
+func (ms Members) ElementIDs() ElementIDs {
+	ids := make(ElementIDs, len(ms), len(ms)+1)
+	for i, m := range ms {
+		ids[i] = m.ElementID()
+	}
+
+	return ids
+}
