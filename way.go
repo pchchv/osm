@@ -288,3 +288,21 @@ func (wn WayNodes) Bounds() *Bounds {
 
 // Ways is a list of osm ways with some helper functions attached.
 type Ways []*Way
+
+type waysSort Ways
+
+func (ws waysSort) Len() int {
+	return len(ws)
+}
+
+func (ws waysSort) Swap(i, j int) {
+	ws[i], ws[j] = ws[j], ws[i]
+}
+
+func (ws waysSort) Less(i, j int) bool {
+	if ws[i].ID == ws[j].ID {
+		return ws[i].Version < ws[j].Version
+	}
+
+	return ws[i].ID < ws[j].ID
+}
