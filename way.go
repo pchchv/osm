@@ -83,6 +83,21 @@ func (w *Way) ApplyUpdatesUpTo(t time.Time) error {
 	return nil
 }
 
+// TagMap returns the element tags as a key/value map.
+func (w *Way) TagMap() map[string]string {
+	return w.Tags.Map()
+}
+
+// CommittedAt returns the best estimate on when this
+// element became was written/committed into the database.
+func (w *Way) CommittedAt() time.Time {
+	if w.Committed != nil {
+		return *w.Committed
+	}
+
+	return w.Timestamp
+}
+
 // applyUpdate modifies the current way and dictated by the given update.
 // Returns UpdateIndexOutOfRangeError if the update index is too large.
 func (w *Way) applyUpdate(u Update) error {
