@@ -128,3 +128,18 @@ type Relation struct {
 	// Bounds are included by overpass, and maybe others
 	Bounds *Bounds `xml:"bounds,omitempty" json:"bounds,omitempty"`
 }
+
+// ObjectID returns the object id of the relation.
+func (r *Relation) ObjectID() ObjectID {
+	return r.ID.ObjectID(r.Version)
+}
+
+// FeatureID returns the feature id of the relation.
+func (r *Relation) FeatureID() FeatureID {
+	return r.ID.FeatureID()
+}
+
+// ElementID returns the element id of the relation.
+func (r *Relation) ElementID() ElementID {
+	return r.ID.ElementID(r.Version)
+}
