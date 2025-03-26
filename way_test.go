@@ -256,3 +256,51 @@ func TestWay_MarshalJSON(t *testing.T) {
 		t.Errorf("incorrect json: %v", string(data))
 	}
 }
+
+func TestWays_ids(t *testing.T) {
+	ws := Ways{
+		{ID: 1, Version: 3},
+		{ID: 2, Version: 4},
+	}
+	eids := ElementIDs{WayID(1).ElementID(3), WayID(2).ElementID(4)}
+	if ids := ws.ElementIDs(); !reflect.DeepEqual(ids, eids) {
+		t.Errorf("incorrect element ids: %v", ids)
+	}
+
+	fids := FeatureIDs{WayID(1).FeatureID(), WayID(2).FeatureID()}
+	if ids := ws.FeatureIDs(); !reflect.DeepEqual(ids, fids) {
+		t.Errorf("incorrect feature ids: %v", ids)
+	}
+
+	wids := []WayID{1, 2}
+	if ids := ws.IDs(); !reflect.DeepEqual(ids, wids) {
+		t.Errorf("incorrect way ids: %v", wids)
+	}
+}
+
+func TestWays_SortByIDVersion(t *testing.T) {
+	ws := Ways{
+		{ID: 7, Version: 3},
+		{ID: 2, Version: 4},
+		{ID: 5, Version: 2},
+		{ID: 5, Version: 3},
+		{ID: 5, Version: 4},
+		{ID: 3, Version: 4},
+		{ID: 4, Version: 4},
+		{ID: 9, Version: 4},
+	}
+	ws.SortByIDVersion()
+	eids := ElementIDs{
+		WayID(2).ElementID(4),
+		WayID(3).ElementID(4),
+		WayID(4).ElementID(4),
+		WayID(5).ElementID(2),
+		WayID(5).ElementID(3),
+		WayID(5).ElementID(4),
+		WayID(7).ElementID(3),
+		WayID(9).ElementID(4),
+	}
+	if ids := ws.ElementIDs(); !reflect.DeepEqual(ids, eids) {
+		t.Errorf("incorrect sort: %v", eids)
+	}
+}
