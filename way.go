@@ -49,6 +49,21 @@ type Way struct {
 	Bounds *Bounds `xml:"bounds,omitempty" json:"bounds,omitempty"`
 }
 
+// ObjectID returns the object id of the way.
+func (w *Way) ObjectID() ObjectID {
+	return w.ID.ObjectID(w.Version)
+}
+
+// FeatureID returns the feature id of the way.
+func (w *Way) FeatureID() FeatureID {
+	return w.ID.FeatureID()
+}
+
+// ElementID returns the element id of the way.
+func (w *Way) ElementID() ElementID {
+	return w.ID.ElementID(w.Version)
+}
+
 // WayNode is a short node used as part of ways and relations in the osm xml.
 type WayNode struct {
 	ID          NodeID      `xml:"ref,attr,omitempty"`
