@@ -289,6 +289,26 @@ func (wn WayNodes) Bounds() *Bounds {
 // Ways is a list of osm ways with some helper functions attached.
 type Ways []*Way
 
+// FeatureIDs returns the feature ids for all the ways.
+func (ws Ways) FeatureIDs() FeatureIDs {
+	r := make(FeatureIDs, len(ws))
+	for i, w := range ws {
+		r[i] = w.FeatureID()
+	}
+
+	return r
+}
+
+// ElementIDs returns the element ids for all the ways.
+func (ws Ways) ElementIDs() ElementIDs {
+	r := make(ElementIDs, len(ws))
+	for i, w := range ws {
+		r[i] = w.ElementID()
+	}
+
+	return r
+}
+
 type waysSort Ways
 
 func (ws waysSort) Len() int {
