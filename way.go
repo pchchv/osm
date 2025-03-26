@@ -285,3 +285,6 @@ func (wn WayNodes) Bounds() *Bounds {
 
 	return b
 }
+
+// Ways is a list of osm ways with some helper functions attached.
+type Ways []*Way
