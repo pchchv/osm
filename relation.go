@@ -198,6 +198,26 @@ func (r *Relation) CommittedAt() time.Time {
 // Relations is a list of relations with some helper functions attached.
 type Relations []*Relation
 
+// FeatureIDs returns the feature ids for all the relations.
+func (rs Relations) FeatureIDs() FeatureIDs {
+	result := make(FeatureIDs, len(rs))
+	for i, r := range rs {
+		result[i] = r.FeatureID()
+	}
+
+	return result
+}
+
+// ElementIDs returns the element ids for all the relations.
+func (rs Relations) ElementIDs() ElementIDs {
+	result := make(ElementIDs, len(rs))
+	for i, r := range rs {
+		result[i] = r.ElementID()
+	}
+
+	return result
+}
+
 type relationsSort Relations
 
 func (rs relationsSort) Len() int {
