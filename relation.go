@@ -89,3 +89,14 @@ func (ms Members) ElementIDs() ElementIDs {
 
 	return ids
 }
+
+// MarshalJSON allows the members to be marshalled
+// as defined by the overpass osmjson.
+// This function is a wrapper to marshal null as [].
+func (ms Members) MarshalJSON() ([]byte, error) {
+	if len(ms) == 0 {
+		return []byte(`[]`), nil
+	}
+
+	return marshalJSON([]Member(ms))
+}
