@@ -14,3 +14,19 @@ type Update struct {
 	Lon         float64     `xml:"lon,attr,omitempty" json:"lon,omitempty"`
 	Reverse     bool        `xml:"reverse,attr,omitempty" json:"reverse,omitempty"`
 }
+
+// Updates are collections of updates.
+type Updates []Update
+
+// UpTo returns the subset of updates taking place upto and on the given time.
+func (us Updates) UpTo(t time.Time) (result Updates) {
+	for _, u := range us {
+		if u.Timestamp.After(t) {
+			continue
+		}
+
+		result = append(result, u)
+	}
+
+	return
+}
