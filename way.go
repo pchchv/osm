@@ -2,6 +2,7 @@ package osm
 
 import (
 	"math"
+	"sort"
 	"time"
 
 	"github.com/pchchv/geo"
@@ -307,6 +308,22 @@ func (ws Ways) ElementIDs() ElementIDs {
 	}
 
 	return r
+}
+
+// IDs returns the ids for all the ways.
+func (ws Ways) IDs() []WayID {
+	result := make([]WayID, len(ws))
+	for i, w := range ws {
+		result[i] = w.ID
+	}
+
+	return result
+}
+
+// SortByIDVersion sorts the set of ways
+// first by id and then version in ascending order.
+func (ws Ways) SortByIDVersion() {
+	sort.Sort(waysSort(ws))
 }
 
 type waysSort Ways
