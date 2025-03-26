@@ -2,6 +2,7 @@ package osm
 
 import (
 	"math"
+	"time"
 
 	"github.com/pchchv/geo"
 )
@@ -23,6 +24,29 @@ func (id WayID) FeatureID() FeatureID {
 // ElementID is a helper to convert the id to an element id.
 func (id WayID) ElementID(v int) ElementID {
 	return id.FeatureID().ElementID(v)
+}
+
+// Way is an osm way, ie collection of nodes.
+type Way struct {
+	XMLName     xmlNameJSONTypeWay `xml:"way" json:"type"`
+	ID          WayID              `xml:"id,attr" json:"id"`
+	User        string             `xml:"user,attr" json:"user,omitempty"`
+	UserID      UserID             `xml:"uid,attr" json:"uid,omitempty"`
+	Visible     bool               `xml:"visible,attr" json:"visible"`
+	Version     int                `xml:"version,attr" json:"version,omitempty"`
+	ChangesetID ChangesetID        `xml:"changeset,attr" json:"changeset,omitempty"`
+	Timestamp   time.Time          `xml:"timestamp,attr" json:"timestamp"`
+	Nodes       WayNodes           `xml:"nd" json:"nodes"`
+	Tags        Tags               `xml:"tag" json:"tags,omitempty"`
+	// Committed, is the estimated time this object was committed
+	// and made visible in the central OSM database.
+	Committed *time.Time `xml:"committed,attr,omitempty" json:"committed,omitempty"`
+	// Updates are changes to the nodes of this way independent
+	// of an update to the way itself. The OSM api allows a child
+	// to be updated without any changes to the parent.
+	Updates Updates `xml:"update,omitempty" json:"updates,omitempty"`
+	// Bounds are included by overpass, and maybe others
+	Bounds *Bounds `xml:"bounds,omitempty" json:"bounds,omitempty"`
 }
 
 // WayNode is a short node used as part of ways and relations in the osm xml.
