@@ -66,3 +66,6 @@ func (m Member) ElementID() ElementID {
 func (m Member) Point() geo.Point {
 	return geo.Point{m.Lon, m.Lat}
 }
+
+// Members represents an ordered list of relation members.
+type Members []Member
