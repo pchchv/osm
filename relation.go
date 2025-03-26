@@ -179,3 +179,18 @@ func (r *Relation) applyUpdate(u Update) error {
 
 	return nil
 }
+
+// TagMap returns the element tags as a key/value map.
+func (r *Relation) TagMap() map[string]string {
+	return r.Tags.Map()
+}
+
+// CommittedAt returns the best estimate on when this
+// element became was written/committed into the database.
+func (r *Relation) CommittedAt() time.Time {
+	if r.Committed != nil {
+		return *r.Committed
+	}
+
+	return r.Timestamp
+}
