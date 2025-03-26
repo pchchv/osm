@@ -1,8 +1,11 @@
 package osm
 
 import (
+	"bytes"
+	"encoding/json"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/pchchv/geo"
 )
@@ -90,5 +93,166 @@ func TestWayNodes_UnmarshalJSON(t *testing.T) {
 	expected := []NodeID{1, 2, 3, 4}
 	if ids := wn.NodeIDs(); !reflect.DeepEqual(ids, expected) {
 		t.Errorf("incorrect ids: %v", ids)
+	}
+}
+
+func TestWay_ids(t *testing.T) {
+	w := Way{ID: 12, Version: 2}
+	if id := w.FeatureID(); id != WayID(12).FeatureID() {
+		t.Errorf("incorrect feature id: %v", id)
+	}
+
+	if id := w.ElementID(); id != WayID(12).ElementID(2) {
+		t.Errorf("incorrect element id: %v", id)
+	}
+}
+
+func TestWay_ApplyUpdatesUpTo(t *testing.T) {
+	updates := Updates{
+		{Index: 0, Timestamp: time.Date(2012, 1, 1, 0, 0, 0, 0, time.UTC), Lat: 11},
+		{Index: 1, Timestamp: time.Date(2014, 1, 1, 0, 0, 0, 0, time.UTC), Lat: 12},
+		{Index: 2, Timestamp: time.Date(2013, 1, 1, 0, 0, 0, 0, time.UTC), Lat: 13},
+	}
+
+	w := Way{
+		ID:    123,
+		Nodes: WayNodes{{Lat: 1}, {Lat: 2}, {Lat: 3}},
+	}
+
+	w.Updates = updates
+	w.ApplyUpdatesUpTo(time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC))
+	if w.Nodes[0].Lat != 1 || w.Nodes[1].Lat != 2 || w.Nodes[2].Lat != 3 {
+		t.Errorf("incorrect way nodes, got %v", w.Nodes)
+	}
+
+	w.Updates = updates
+	w.ApplyUpdatesUpTo(time.Date(2013, 1, 1, 0, 0, 0, 0, time.UTC))
+	if w.Nodes[0].Lat != 11 || w.Nodes[1].Lat != 2 || w.Nodes[2].Lat != 13 {
+		t.Errorf("incorrect way nodes, got %v", w.Nodes)
+	}
+
+	if l := len(w.Updates); l != 1 {
+		t.Errorf("incorrect number of updates: %v", l)
+	}
+
+	if w.Updates[0].Index != 1 {
+		t.Errorf("incorrect updates: %v", w.Updates)
+	}
+}
+
+func TestWay_ApplyUpdate(t *testing.T) {
+	w := Way{
+		ID:    123,
+		Nodes: WayNodes{{Lat: 1, Lon: 2}},
+	}
+
+	err := w.applyUpdate(Update{
+		Index:       0,
+		Version:     1,
+		ChangesetID: 2,
+		Lat:         3,
+		Lon:         4,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	expected := WayNode{
+		ID:          0,
+		Version:     1,
+		ChangesetID: 2,
+		Lat:         3,
+		Lon:         4,
+	}
+
+	if !reflect.DeepEqual(expected, w.Nodes[0]) {
+		t.Errorf("incorrect update, got %+v", w.Nodes[0])
+	}
+}
+
+func TestWay_ApplyUpdate_error(t *testing.T) {
+	w := Way{
+		ID:    123,
+		Nodes: WayNodes{{Lat: 1, Lon: 2}},
+	}
+
+	err := w.applyUpdate(Update{
+		Index: 1,
+	})
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if e, ok := err.(*UpdateIndexOutOfRangeError); !ok {
+		t.Errorf("incorrect error, got %v", e)
+	}
+}
+
+func TestWay_LineString(t *testing.T) {
+	w := &Way{
+		ID: 1,
+		Nodes: WayNodes{
+			{ID: 1, Lon: 1, Lat: 2},
+			{ID: 2, Lon: 0, Lat: 3},
+			{ID: 3, Lon: 0, Lat: 0},
+			{ID: 3, Lon: 3, Lat: 0},
+			{ID: 3, Lon: 3, Lat: 4},
+		},
+	}
+
+	ls := w.LineString()
+	expected := geo.LineString{{1, 2}, {0, 3}, {3, 0}, {3, 4}}
+	if !ls.Equal(expected) {
+		t.Errorf("incorrect linestring: %v", ls)
+	}
+
+	w.Updates = Updates{
+		{
+			Index:     1,
+			Timestamp: time.Time{},
+			Lon:       10, Lat: 20,
+		},
+		{
+			Index:     1000, // index out of range should be skipped
+			Timestamp: time.Time{},
+			Lon:       10, Lat: 20,
+		},
+		{
+			Index:     0,
+			Timestamp: time.Time{},
+			Lon:       5, Lat: 6,
+		},
+		{
+			Index:     4,
+			Timestamp: time.Time{},
+			Lon:       7, Lat: 8,
+		},
+		{
+			Index:     2, // should be skipped
+			Timestamp: time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC),
+			Lon:       10, Lat: 20,
+		},
+	}
+
+	ls = w.LineStringAt(time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC))
+	expected = geo.LineString{{5, 6}, {10, 20}, {3, 0}, {7, 8}}
+	if !ls.Equal(expected) {
+		t.Errorf("incorrect line: %v", ls)
+	}
+}
+
+func TestWay_MarshalJSON(t *testing.T) {
+	w := Way{
+		ID:    123,
+		Nodes: WayNodes{{ID: 1}, {ID: 2}, {ID: 4}},
+	}
+
+	data, err := json.Marshal(w)
+	if err != nil {
+		t.Fatalf("marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`{"type":"way","id":123,"visible":false,"timestamp":"0001-01-01T00:00:00Z","nodes":[1,2,4]}`)) {
+		t.Errorf("incorrect json: %v", string(data))
 	}
 }
