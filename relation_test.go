@@ -199,3 +199,51 @@ func TestRelation_ApplyUpdate_error(t *testing.T) {
 		t.Errorf("incorrect error, got %v", e)
 	}
 }
+
+func TestRelations_ids(t *testing.T) {
+	rs := Relations{
+		{ID: 1, Version: 3},
+		{ID: 2, Version: 4},
+	}
+	eids := ElementIDs{RelationID(1).ElementID(3), RelationID(2).ElementID(4)}
+	if ids := rs.ElementIDs(); !reflect.DeepEqual(ids, eids) {
+		t.Errorf("incorrect element ids: %v", ids)
+	}
+
+	fids := FeatureIDs{RelationID(1).FeatureID(), RelationID(2).FeatureID()}
+	if ids := rs.FeatureIDs(); !reflect.DeepEqual(ids, fids) {
+		t.Errorf("incorrect feature ids: %v", ids)
+	}
+
+	rids := []RelationID{1, 2}
+	if ids := rs.IDs(); !reflect.DeepEqual(ids, rids) {
+		t.Errorf("incorrect node id: %v", rids)
+	}
+}
+
+func TestRelations_SortByIDVersion(t *testing.T) {
+	rs := Relations{
+		{ID: 7, Version: 3},
+		{ID: 2, Version: 4},
+		{ID: 5, Version: 2},
+		{ID: 5, Version: 3},
+		{ID: 5, Version: 4},
+		{ID: 3, Version: 4},
+		{ID: 4, Version: 4},
+		{ID: 9, Version: 4},
+	}
+	rs.SortByIDVersion()
+	eids := ElementIDs{
+		RelationID(2).ElementID(4),
+		RelationID(3).ElementID(4),
+		RelationID(4).ElementID(4),
+		RelationID(5).ElementID(2),
+		RelationID(5).ElementID(3),
+		RelationID(5).ElementID(4),
+		RelationID(7).ElementID(3),
+		RelationID(9).ElementID(4),
+	}
+	if ids := rs.ElementIDs(); !reflect.DeepEqual(ids, eids) {
+		t.Errorf("incorrect sort: %v", eids)
+	}
+}
