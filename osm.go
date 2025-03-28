@@ -2,6 +2,38 @@ package osm
 
 import "fmt"
 
+const (
+	// should be returned if the osm data is actual
+	// osm data to give some information about the source and license
+	Copyright   = "OpenStreetMap and contributors"
+	Attribution = "http://www.openstreetmap.org/copyright"
+	License     = "http://opendatacommons.org/licenses/odbl/1-0/"
+)
+
+// OSM represents the core osm data designed
+// to parse [OSM XML](http://wiki.openstreetmap.org/wiki/OSM_XML).
+type OSM struct {
+	// JSON APIs can return version as a string or number,
+	// converted to string for consistency.
+	Version   string `xml:"version,attr,omitempty"`
+	Generator string `xml:"generator,attr,omitempty"`
+	// These three attributes are returned by the osm api.
+	// The Copyright, Attribution and License constants contain
+	// suggested values that match those returned by the official api.
+	Copyright   string    `xml:"copyright,attr,omitempty"`
+	Attribution string    `xml:"attribution,attr,omitempty"`
+	License     string    `xml:"license,attr,omitempty"`
+	Bounds      *Bounds   `xml:"bounds,omitempty"`
+	Nodes       Nodes     `xml:"node"`
+	Ways        Ways      `xml:"way"`
+	Relations   Relations `xml:"relation"`
+	// Changesets typically not be included with actual data,
+	// but all this stuff is technically all under the osm xml
+	Changesets Changesets `xml:"changeset"`
+	Notes      Notes      `xml:"note"`
+	Users      Users      `xml:"user"`
+}
+
 type typeS struct {
 	Type string `json:"type"`
 }
