@@ -3,6 +3,8 @@ package osm
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -254,6 +256,100 @@ func TestWay_MarshalJSON(t *testing.T) {
 
 	if !bytes.Equal(data, []byte(`{"type":"way","id":123,"visible":false,"timestamp":"0001-01-01T00:00:00Z","nodes":[1,2,4]}`)) {
 		t.Errorf("incorrect json: %v", string(data))
+	}
+}
+
+func TestWay_MarshalXML(t *testing.T) {
+	w := Way{
+		ID: 123,
+	}
+
+	data, err := xml.Marshal(w)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	expected := `<way id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"></way>`
+	if !bytes.Equal(data, []byte(expected)) {
+		t.Errorf("incorrect marshal, got: %s", string(data))
+	}
+
+	// node refs
+	w.Nodes = WayNodes{{ID: 123}}
+	data, err = xml.Marshal(w)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`<way id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"><nd ref="123"></nd></way>`)) {
+		t.Errorf("not marshalled correctly: %s", string(data))
+	}
+
+	// node with lat/lon
+	w.Nodes[0] = WayNode{ID: 4, Lat: 1, Lon: 2}
+	data, err = xml.Marshal(w)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`<way id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"><nd ref="4" lat="1" lon="2"></nd></way>`)) {
+		t.Errorf("not marshalled correctly: %s", string(data))
+	}
+
+	// minor way
+	w.Nodes = nil
+	w.Updates = []Update{
+		{
+			Index:     0,
+			Version:   2,
+			Lat:       100.0,
+			Lon:       200.0,
+			Timestamp: time.Date(2012, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+	data, err = xml.Marshal(w)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`<way id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"><update index="0" version="2" timestamp="2012-01-01T00:00:00Z" lat="100" lon="200"></update></way>`)) {
+		t.Errorf("not marshalled correctly: %s", string(data))
+	}
+
+	// blanket xml test
+	data, err = os.ReadFile("testdata/way-updates.osm")
+	if err != nil {
+		t.Fatalf("unable to read file: %e", err)
+	}
+
+	osm := &OSM{}
+	err = xml.Unmarshal(data, &osm)
+	if err != nil {
+		t.Errorf("unmarshal error: %e", err)
+	}
+	way := osm.Ways[0]
+
+	var i1 interface{}
+	err = xml.Unmarshal(data, &i1)
+	if err != nil {
+		t.Errorf("unmarshal error: %e", err)
+	}
+
+	data, err = xml.Marshal(way)
+	if err != nil {
+		t.Errorf("marshal error: %e", err)
+	}
+
+	var i2 interface{}
+	err = xml.Unmarshal(data, &i2)
+	if err != nil {
+		t.Errorf("unmarshal error: %e", err)
+	}
+
+	if !reflect.DeepEqual(i1, i2) {
+		t.Errorf("interfaces not equal")
+		t.Logf("%+v", i1)
+		t.Logf("%+v", i2)
 	}
 }
 
