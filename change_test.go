@@ -2,6 +2,7 @@ package osm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"os"
@@ -187,6 +188,49 @@ func TestChange_MarshalXML(t *testing.T) {
 	expected = `<osmChange></osmChange>`
 	if !bytes.Equal(data, []byte(expected)) {
 		t.Errorf("incorrect marshal, got: %s", string(data))
+	}
+}
+
+func TestChange_HistoryDatasource(t *testing.T) {
+	ctx := context.Background()
+	c := &Change{
+		Create: &OSM{
+			Nodes: Nodes{{ID: 1, Version: 1}},
+		},
+		Modify: &OSM{
+			Nodes: Nodes{{ID: 2, Version: 2}},
+		},
+		Delete: &OSM{
+			Nodes: Nodes{{ID: 3, Version: 3}},
+		},
+	}
+	ds := c.HistoryDatasource()
+
+	n1, err := ds.NodeHistory(ctx, 1)
+	if err != nil {
+		t.Fatalf("get error: %e", err)
+	}
+
+	if !n1[0].Visible {
+		t.Errorf("created node should be visible")
+	}
+
+	n2, err := ds.NodeHistory(ctx, 2)
+	if err != nil {
+		t.Fatalf("get error: %e", err)
+	}
+
+	if !n2[0].Visible {
+		t.Errorf("modified node should be visible")
+	}
+
+	n3, err := ds.NodeHistory(ctx, 3)
+	if err != nil {
+		t.Fatalf("get error: %e", err)
+	}
+
+	if n3[0].Visible {
+		t.Errorf("deleted node should not be visible")
 	}
 }
 

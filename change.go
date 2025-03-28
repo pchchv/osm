@@ -85,6 +85,16 @@ func (c Change) MarshalXML(e *xml.Encoder, start xml.StartElement) (err error) {
 	return e.EncodeToken(start.End())
 }
 
+// HistoryDatasource converts the change object to a datasource accessible by feature id.
+// All the creates, modifies and deletes will be added in that order.
+func (c *Change) HistoryDatasource() *HistoryDatasource {
+	ds := &HistoryDatasource{}
+	ds.add(c.Create, true)
+	ds.add(c.Modify, true)
+	ds.add(c.Delete, false)
+	return ds
+}
+
 func marshalInnerChange(e *xml.Encoder, name string, o *OSM) (err error) {
 	if o == nil {
 		return nil

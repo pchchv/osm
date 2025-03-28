@@ -296,6 +296,14 @@ func (o *OSM) Append(obj Object) {
 	}
 }
 
+// HistoryDatasource converts the osm object to a
+// datasource accessible by the feature id.
+func (o *OSM) HistoryDatasource() *HistoryDatasource {
+	ds := &HistoryDatasource{}
+	ds.add(o)
+	return ds
+}
+
 func (o *OSM) marshalInnerXML(e *xml.Encoder) (err error) {
 	if o == nil {
 		return nil
