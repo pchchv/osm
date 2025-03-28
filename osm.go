@@ -83,6 +83,56 @@ func (o *OSM) ElementIDs() ElementIDs {
 	return result
 }
 
+// MarshalJSON allows the tags to be marshalled as an object as defined by the overpass osmjson.
+func (o OSM) MarshalJSON() ([]byte, error) {
+	s := struct {
+		Version     string  `json:"version,omitempty"`
+		Generator   string  `json:"generator,omitempty"`
+		Copyright   string  `json:"copyright,omitempty"`
+		Attribution string  `json:"attribution,omitempty"`
+		License     string  `json:"license,omitempty"`
+		Elements    Objects `json:"elements"`
+	}{o.Version, o.Generator, o.Copyright, o.Attribution, o.License, o.Objects()}
+
+	return marshalJSON(s)
+}
+
+// MarshalXML implements the xml.Marshaller method to allow for
+// the correct wrapper/start element case and attr data.
+func (o OSM) MarshalXML(e *xml.Encoder, start xml.StartElement) (err error) {
+	start.Name.Local = "osm"
+	start.Attr = make([]xml.Attr, 0, 5)
+	if o.Version != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "version"}, Value: o.Version})
+	}
+
+	if o.Generator != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "generator"}, Value: o.Generator})
+	}
+
+	if o.Copyright != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "copyright"}, Value: o.Copyright})
+	}
+
+	if o.Attribution != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "attribution"}, Value: o.Attribution})
+	}
+
+	if o.License != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "license"}, Value: o.License})
+	}
+
+	if err = e.EncodeToken(start); err != nil {
+		return
+	}
+
+	if err = o.marshalInnerXML(e); err != nil {
+		return
+	}
+
+	return e.EncodeToken(start.End())
+}
+
 func (o *OSM) marshalInnerXML(e *xml.Encoder) (err error) {
 	if o == nil {
 		return nil
