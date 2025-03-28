@@ -34,6 +34,52 @@ type OSM struct {
 	Users      Users      `xml:"user"`
 }
 
+// FeatureIDs returns the slice of feature ids for
+// all the nodes, ways and relations.
+func (o *OSM) FeatureIDs() FeatureIDs {
+	if o == nil {
+		return nil
+	}
+
+	result := make(FeatureIDs, 0, len(o.Nodes)+len(o.Ways)+len(o.Relations))
+	for _, e := range o.Nodes {
+		result = append(result, e.FeatureID())
+	}
+
+	for _, e := range o.Ways {
+		result = append(result, e.FeatureID())
+	}
+
+	for _, e := range o.Relations {
+		result = append(result, e.FeatureID())
+	}
+
+	return result
+}
+
+// ElementIDs returns the slice of element ids for
+// all the nodes, ways and relations.
+func (o *OSM) ElementIDs() ElementIDs {
+	if o == nil {
+		return nil
+	}
+
+	result := make(ElementIDs, 0, len(o.Nodes)+len(o.Ways)+len(o.Relations))
+	for _, e := range o.Nodes {
+		result = append(result, e.ElementID())
+	}
+
+	for _, e := range o.Ways {
+		result = append(result, e.ElementID())
+	}
+
+	for _, e := range o.Relations {
+		result = append(result, e.ElementID())
+	}
+
+	return result
+}
+
 type typeS struct {
 	Type string `json:"type"`
 }
