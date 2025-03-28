@@ -5,7 +5,10 @@ import (
 	"errors"
 )
 
-var errNotFound = errors.New("osm: feature not found")
+var (
+	_           HistoryDatasourcer = &HistoryDatasource{}
+	errNotFound                    = errors.New("osm: feature not found")
+)
 
 // HistoryDatasource wraps maps to
 // implement the HistoryDataSource interface.
@@ -105,4 +108,12 @@ func (ds *HistoryDatasource) add(o *OSM, visible ...bool) {
 			ds.Relations[r.ID] = append(ds.Relations[r.ID], r)
 		}
 	}
+}
+
+// HistoryDatasourcer defines an interface to osm history data.
+type HistoryDatasourcer interface {
+	NodeHistory(context.Context, NodeID) (Nodes, error)
+	WayHistory(context.Context, WayID) (Ways, error)
+	RelationHistory(context.Context, RelationID) (Relations, error)
+	NotFound(error) bool
 }
