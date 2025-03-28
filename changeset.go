@@ -73,6 +73,17 @@ func (c *Changeset) Bounds() *Bounds {
 	}
 }
 
+// ImageryUsed returns imagery used for the changeset from the tag.
+func (c *Changeset) ImageryUsed() string {
+	return c.Tags.Find("imagery_used")
+}
+
+// Bot returns true if the bot tag is a yes.
+func (c *Changeset) Bot() bool {
+	// As of July 5, 2015: 300k yes, 123 no, 8 other
+	return c.Tags.Find("bot") == "yes"
+}
+
 // Changesets is a collection with some helper functions attached.
 type Changesets []*Changeset
 
