@@ -1,5 +1,7 @@
 package osm
 
+import "encoding/xml"
+
 // Change is the structure of a changeset to be uploaded or downloaded from the osm api server.
 type Change struct {
 	Version     string `xml:"version,attr,omitempty" json:"version,omitempty"`
@@ -37,6 +39,50 @@ func (c *Change) AppendDelete(o Object) {
 	}
 
 	c.Delete.Append(o)
+}
+
+// MarshalXML implements the xml.Marshaller method to allow for the
+// correct wrapper/start element case and attr data.
+func (c Change) MarshalXML(e *xml.Encoder, start xml.StartElement) (err error) {
+	start.Name.Local = "osmChange"
+	start.Attr = []xml.Attr{}
+	if c.Version != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "version"}, Value: c.Version})
+	}
+
+	if c.Generator != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "generator"}, Value: c.Generator})
+	}
+
+	if c.Copyright != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "copyright"}, Value: c.Copyright})
+	}
+
+	if c.Attribution != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "attribution"}, Value: c.Attribution})
+	}
+
+	if c.License != "" {
+		start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "license"}, Value: c.License})
+	}
+
+	if err = e.EncodeToken(start); err != nil {
+		return
+	}
+
+	if err = marshalInnerChange(e, "create", c.Create); err != nil {
+		return
+	}
+
+	if err = marshalInnerChange(e, "modify", c.Modify); err != nil {
+		return
+	}
+
+	if err = marshalInnerChange(e, "delete", c.Delete); err != nil {
+		return
+	}
+
+	return e.EncodeToken(start.End())
 }
 
 func marshalInnerChange(e *xml.Encoder, name string, o *OSM) (err error) {
