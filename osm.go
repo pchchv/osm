@@ -133,6 +133,124 @@ func (o OSM) MarshalXML(e *xml.Encoder, start xml.StartElement) (err error) {
 	return e.EncodeToken(start.End())
 }
 
+// UnmarshalJSON decodes osm json representation as defined by the overpass osmjson.
+// This format can also by returned by the official OSM API.
+func (o *OSM) UnmarshalJSON(data []byte) (err error) {
+	s := struct {
+		// Version can be string or number,
+		// openstreetmap.org returns string overpass returns number
+		Version     interface{}        `json:"version"`
+		Generator   string             `json:"generator"`
+		Copyright   string             `json:"copyright"`
+		Attribution string             `json:"attribution"`
+		License     string             `json:"license"`
+		Elements    []nocopyRawMessage `json:"elements"`
+	}{}
+
+	if err = unmarshalJSON(data, &s); err != nil {
+		return
+	}
+
+	o.Version = fmt.Sprintf("%v", s.Version)
+	o.Generator = s.Generator
+	o.Copyright = s.Copyright
+	o.Attribution = s.Attribution
+	o.License = s.License
+	for index, data := range s.Elements {
+		t, err := findType(index, data)
+		if err != nil {
+			return err
+		}
+
+		switch t {
+		case "node":
+			n := &Node{}
+			if err = unmarshalJSON(data, n); err != nil {
+				return err
+			}
+			o.Nodes = append(o.Nodes, n)
+		case "way":
+			w := &Way{}
+			if err = unmarshalJSON(data, w); err != nil {
+				return err
+			}
+			o.Ways = append(o.Ways, w)
+		case "relation":
+			r := &Relation{}
+			if err = unmarshalJSON(data, r); err != nil {
+				return err
+			}
+			o.Relations = append(o.Relations, r)
+		case "changeset":
+			cs := &Changeset{}
+			if err = unmarshalJSON(data, cs); err != nil {
+				return err
+			}
+			o.Changesets = append(o.Changesets, cs)
+		case "note":
+			n := &Note{}
+			if err = unmarshalJSON(data, n); err != nil {
+				return err
+			}
+			o.Notes = append(o.Notes, n)
+		case "user":
+			u := &User{}
+			if err = unmarshalJSON(data, u); err != nil {
+				return err
+			}
+			o.Users = append(o.Users, u)
+		default:
+			return fmt.Errorf("unknown type of '%s' for element index %d", t, index)
+		}
+	}
+
+	return nil
+}
+
+// Objects returns an array of objects containing
+// any nodes, ways, relations, changesets, notes and users.
+func (o *OSM) Objects() Objects {
+	if o == nil {
+		return nil
+	}
+
+	l := len(o.Nodes) + len(o.Ways) + len(o.Relations) + len(o.Changesets) + len(o.Notes) + len(o.Users)
+	if o.Bounds != nil {
+		l++
+	}
+
+	result := make(Objects, 0, l)
+	if o.Bounds != nil {
+		result = append(result, o.Bounds)
+	}
+
+	for _, o := range o.Nodes {
+		result = append(result, o)
+	}
+
+	for _, o := range o.Ways {
+		result = append(result, o)
+	}
+
+	for _, o := range o.Relations {
+		result = append(result, o)
+	}
+
+	for _, o := range o.Changesets {
+		result = append(result, o)
+	}
+
+	for _, o := range o.Users {
+		result = append(result, o)
+	}
+
+	for _, o := range o.Notes {
+		result = append(result, o)
+	}
+
+	return result
+}
+
 func (o *OSM) marshalInnerXML(e *xml.Encoder) (err error) {
 	if o == nil {
 		return nil
