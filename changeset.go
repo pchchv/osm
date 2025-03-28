@@ -87,6 +87,20 @@ func (c *Changeset) Bot() bool {
 // Changesets is a collection with some helper functions attached.
 type Changesets []*Changeset
 
+// IDs returns the ids of the changesets in the slice.
+func (cs Changesets) IDs() []ChangesetID {
+	if len(cs) == 0 {
+		return nil
+	}
+
+	r := make([]ChangesetID, 0, len(cs))
+	for _, c := range cs {
+		r = append(r, c.ID)
+	}
+
+	return r
+}
+
 // ChangesetComment is a specific comment in a changeset discussion.
 type ChangesetComment struct {
 	User      string    `xml:"user,attr" json:"user"`
