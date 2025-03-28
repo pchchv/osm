@@ -1,10 +1,50 @@
 package osm
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // ObjectID encodes the type and ref of an osm object,
 // e.g. nodes, ways, relations, changesets, notes and users.
 type ObjectID int64
+
+// ParseObjectID takes a string and tries to determine the object id from it.
+// The string must be formatted as "type/id:version",
+// the same as the result of the String method.
+func ParseObjectID(s string) (ObjectID, error) {
+	parts := strings.Split(s, "/")
+	if len(parts) != 2 {
+		return 0, fmt.Errorf("invalid element id: %v", s)
+	}
+
+	parts2 := strings.Split(parts[1], ":")
+	if l := len(parts2); l == 0 || l > 2 {
+		return 0, fmt.Errorf("invalid element id: %v", s)
+	}
+
+	var version int
+	ref, err := strconv.ParseInt(parts2[0], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid element id: %v: %v", s, err)
+	}
+
+	if len(parts2) == 2 && parts2[1] != "-" {
+		v, e := strconv.ParseInt(parts2[1], 10, 64)
+		if e != nil {
+			return 0, fmt.Errorf("invalid element id: %v: %v", s, err)
+		}
+		version = int(v)
+	}
+
+	oid, err := Type(parts[0]).objectID(ref, version)
+	if err != nil {
+		return 0, fmt.Errorf("invalid element id: %v: %v", s, err)
+	}
+
+	return oid, nil
+}
 
 // Version returns the version of the object.
 // Return 0 if the object doesn't have versions like users,
