@@ -56,3 +56,53 @@ func (ds *HistoryDatasource) RelationHistory(ctx context.Context, id RelationID)
 
 	return v, nil
 }
+
+// NotFound returns true if the error returned is a not found error.
+func (ds *HistoryDatasource) NotFound(err error) bool {
+	return err == errNotFound
+}
+
+func (ds *HistoryDatasource) add(o *OSM, visible ...bool) {
+	if o == nil {
+		return
+	}
+
+	if len(o.Nodes) > 0 {
+		if ds.Nodes == nil {
+			ds.Nodes = make(map[NodeID]Nodes)
+		}
+
+		for _, n := range o.Nodes {
+			if len(visible) == 1 {
+				n.Visible = visible[0]
+			}
+			ds.Nodes[n.ID] = append(ds.Nodes[n.ID], n)
+		}
+	}
+
+	if len(o.Ways) > 0 {
+		if ds.Ways == nil {
+			ds.Ways = make(map[WayID]Ways)
+		}
+
+		for _, w := range o.Ways {
+			if len(visible) == 1 {
+				w.Visible = visible[0]
+			}
+			ds.Ways[w.ID] = append(ds.Ways[w.ID], w)
+		}
+	}
+
+	if len(o.Relations) > 0 {
+		if ds.Relations == nil {
+			ds.Relations = make(map[RelationID]Relations)
+		}
+
+		for _, r := range o.Relations {
+			if len(visible) == 1 {
+				r.Visible = visible[0]
+			}
+			ds.Relations[r.ID] = append(ds.Relations[r.ID], r)
+		}
+	}
+}
