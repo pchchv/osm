@@ -11,3 +11,30 @@ type Change struct {
 	Modify      *OSM   `xml:"modify" json:"modify,omitempty"`
 	Delete      *OSM   `xml:"delete" json:"delete,omitempty"`
 }
+
+// AppendCreate appends the object to the Create OSM object.
+func (c *Change) AppendCreate(o Object) {
+	if c.Create == nil {
+		c.Create = &OSM{}
+	}
+
+	c.Create.Append(o)
+}
+
+// AppendModify appends the object to the Modify OSM object.
+func (c *Change) AppendModify(o Object) {
+	if c.Modify == nil {
+		c.Modify = &OSM{}
+	}
+
+	c.Modify.Append(o)
+}
+
+// AppendDelete appends the object to the Delete OSM object.
+func (c *Change) AppendDelete(o Object) {
+	if c.Delete == nil {
+		c.Delete = &OSM{}
+	}
+
+	c.Delete.Append(o)
+}
