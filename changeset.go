@@ -33,6 +33,9 @@ type Changeset struct {
 	Change        *Change              `xml:"-" json:"change,omitempty"`
 }
 
+// Changesets is a collection with some helper functions attached.
+type Changesets []*Changeset
+
 // ChangesetComment is a specific comment in a changeset discussion.
 type ChangesetComment struct {
 	User      string    `xml:"user,attr" json:"user"`
