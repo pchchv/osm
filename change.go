@@ -38,3 +38,20 @@ func (c *Change) AppendDelete(o Object) {
 
 	c.Delete.Append(o)
 }
+
+func marshalInnerChange(e *xml.Encoder, name string, o *OSM) (err error) {
+	if o == nil {
+		return nil
+	}
+
+	t := xml.StartElement{Name: xml.Name{Local: name}}
+	if err = e.EncodeToken(t); err != nil {
+		return
+	}
+
+	if err = o.marshalInnerXML(e); err != nil {
+		return
+	}
+
+	return e.EncodeToken(t.End())
+}
