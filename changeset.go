@@ -33,6 +33,21 @@ type Changeset struct {
 	Change        *Change              `xml:"-" json:"change,omitempty"`
 }
 
+// ObjectID returns the object id of the changeset.
+func (c *Changeset) ObjectID() ObjectID {
+	return c.ID.ObjectID()
+}
+
+// Source returns source for the changeset from the tag.
+func (c *Changeset) Source() string {
+	return c.Tags.Find("source")
+}
+
+// CreatedBy returns the changeset created by from the tag.
+func (c *Changeset) CreatedBy() string {
+	return c.Tags.Find("created_by")
+}
+
 // Changesets is a collection with some helper functions attached.
 type Changesets []*Changeset
 
