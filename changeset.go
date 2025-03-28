@@ -48,6 +48,16 @@ func (c *Changeset) CreatedBy() string {
 	return c.Tags.Find("created_by")
 }
 
+// Host returns the changeset host from the tag.
+func (c *Changeset) Host() string {
+	return c.Tags.Find("host")
+}
+
+// Locale returns the changeset locale from the tag.
+func (c *Changeset) Locale() string {
+	return c.Tags.Find("locale")
+}
+
 // Changesets is a collection with some helper functions attached.
 type Changesets []*Changeset
 
