@@ -58,6 +58,21 @@ func (c *Changeset) Locale() string {
 	return c.Tags.Find("locale")
 }
 
+// Comment returns the changeset comment from the tag.
+func (c *Changeset) Comment() string {
+	return c.Tags.Find("comment")
+}
+
+// Bounds returns the bounds of the changeset as a bounds object.
+func (c *Changeset) Bounds() *Bounds {
+	return &Bounds{
+		MinLat: c.MinLat,
+		MaxLat: c.MaxLat,
+		MinLon: c.MinLon,
+		MaxLon: c.MaxLon,
+	}
+}
+
 // Changesets is a collection with some helper functions attached.
 type Changesets []*Changeset
 
