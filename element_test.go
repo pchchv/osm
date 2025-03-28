@@ -197,6 +197,100 @@ func TestElementIDs_Sort(t *testing.T) {
 	}
 }
 
+func TestElement_implementations(t *testing.T) {
+	var _ Element = &Node{}
+	var _ Element = &Way{}
+	var _ Element = &Relation{}
+	// these should not implement the Element interface
+	noImplement := []interface{}{
+		ObjectID(0),
+		FeatureID(0),
+		ElementID(0),
+		&Changeset{},
+		&Note{},
+		&User{},
+		WayNode{},
+		Member{},
+		NodeID(0),
+		WayID(0),
+		RelationID(0),
+		ChangesetID(0),
+		NoteID(0),
+		UserID(0),
+		Nodes{},
+		Ways{},
+		Relations{},
+		Changesets{},
+		Notes{},
+		Users{},
+	}
+
+	for _, ni := range noImplement {
+		if _, ok := ni.(Element); ok {
+			t.Errorf("%T should not be an element", ni)
+		}
+	}
+}
+
+func TestElements_ElementIDs(t *testing.T) {
+	es := Elements{
+		&Node{ID: 1, Version: 5},
+		&Way{ID: 2, Version: 6},
+		&Relation{ID: 3, Version: 7},
+		&Node{ID: 4, Version: 8},
+	}
+	expected := ElementIDs{
+		NodeID(1).ElementID(5),
+		WayID(2).ElementID(6),
+		RelationID(3).ElementID(7),
+		NodeID(4).ElementID(8),
+	}
+	if ids := es.ElementIDs(); !reflect.DeepEqual(ids, expected) {
+		t.Errorf("incorrect ids: %v", ids)
+	}
+}
+
+func TestElements_FeatureIDs(t *testing.T) {
+	es := Elements{
+		&Node{ID: 1, Version: 5},
+		&Way{ID: 2, Version: 6},
+		&Relation{ID: 3, Version: 7},
+		&Node{ID: 4, Version: 8},
+	}
+	expected := FeatureIDs{
+		NodeID(1).FeatureID(),
+		WayID(2).FeatureID(),
+		RelationID(3).FeatureID(),
+		NodeID(4).FeatureID(),
+	}
+	if ids := es.FeatureIDs(); !reflect.DeepEqual(ids, expected) {
+		t.Errorf("incorrect ids: %v", ids)
+	}
+}
+
+func TestElements_Sort(t *testing.T) {
+	es := Elements{
+		&Node{ID: 1, Version: 4},
+		&Node{ID: 1, Version: 5},
+		&Way{ID: 2, Version: 6},
+		&Relation{ID: 3, Version: 7},
+		&Way{ID: 2, Version: 5},
+		&Node{ID: 4, Version: 8},
+	}
+	es.Sort()
+	expected := ElementIDs{
+		NodeID(1).ElementID(4),
+		NodeID(1).ElementID(5),
+		NodeID(4).ElementID(8),
+		WayID(2).ElementID(5),
+		WayID(2).ElementID(6),
+		RelationID(3).ElementID(7),
+	}
+	if ids := es.ElementIDs(); !reflect.DeepEqual(ids, expected) {
+		t.Errorf("incorrect sort: %v", ids)
+	}
+}
+
 func BenchmarkElementID_Sort(b *testing.B) {
 	rand.New(rand.NewSource(1024))
 	tests := make([]ElementIDs, b.N)

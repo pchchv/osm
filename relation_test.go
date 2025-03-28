@@ -3,6 +3,8 @@ package osm
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -92,7 +94,7 @@ func TestRelation_MarshalJSON(t *testing.T) {
 	}
 	data, err := json.Marshal(r)
 	if err != nil {
-		t.Fatalf("marshal error: %v", err)
+		t.Fatalf("marshal error: %e", err)
 	}
 
 	if !bytes.Equal(data, []byte(`{"type":"relation","id":123,"visible":false,"timestamp":"0001-01-01T00:00:00Z","members":[]}`)) {
@@ -107,7 +109,7 @@ func TestRelation_MarshalJSON(t *testing.T) {
 
 	data, err = json.Marshal(r)
 	if err != nil {
-		t.Fatalf("marshal error: %v", err)
+		t.Fatalf("marshal error: %e", err)
 	}
 
 	if !bytes.Equal(data, []byte(`{"type":"relation","id":123,"visible":false,"timestamp":"0001-01-01T00:00:00Z","members":[{"type":"node","ref":123,"role":"outer","version":1}]}`)) {
@@ -167,7 +169,7 @@ func TestRelation_ApplyUpdate(t *testing.T) {
 		Reverse:     true,
 	})
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %e", err)
 	}
 
 	expected := Member{
@@ -197,6 +199,100 @@ func TestRelation_ApplyUpdate_error(t *testing.T) {
 
 	if e, ok := err.(*UpdateIndexOutOfRangeError); !ok {
 		t.Errorf("incorrect error, got %v", e)
+	}
+}
+
+func TestRelation_MarshalXML(t *testing.T) {
+	r := Relation{
+		ID: 123,
+	}
+
+	data, err := xml.Marshal(r)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	expected := `<relation id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"></relation>`
+	if !bytes.Equal(data, []byte(expected)) {
+		t.Errorf("incorrect marshal, got: %s", string(data))
+	}
+
+	// members
+	r.Members = Members{{Type: "node", Ref: 123, Role: "child"}}
+	data, err = xml.Marshal(r)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`<relation id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"><member type="node" ref="123" role="child"></member></relation>`)) {
+		t.Errorf("not marshalled correctly: %s", string(data))
+	}
+
+	// members with nodes
+	r.Members = Members{{Type: "way", Ref: 123, Role: "child", Nodes: WayNodes{{Lat: 1, Lon: 2}, {Lat: 3, Lon: 4}}}}
+	data, err = xml.Marshal(r)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`<relation id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"><member type="way" ref="123" role="child"><nd lat="1" lon="2"></nd><nd lat="3" lon="4"></nd></member></relation>`)) {
+		t.Errorf("not marshalled correctly: %s", string(data))
+	}
+
+	// minor relation
+	r.Members = nil
+	r.Updates = []Update{
+		{
+			Index:       0,
+			Version:     1,
+			ChangesetID: 123,
+			Timestamp:   time.Date(2012, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	data, err = xml.Marshal(r)
+	if err != nil {
+		t.Fatalf("xml marshal error: %e", err)
+	}
+
+	if !bytes.Equal(data, []byte(`<relation id="123" user="" uid="0" visible="false" version="0" changeset="0" timestamp="0001-01-01T00:00:00Z"><update index="0" version="1" timestamp="2012-01-01T00:00:00Z" changeset="123"></update></relation>`)) {
+		t.Errorf("not marshalled correctly: %s", string(data))
+	}
+
+	// blanket xml test
+	data, err = os.ReadFile("testdata/relation-updates.osm")
+	if err != nil {
+		t.Fatalf("could not read file: %e", err)
+	}
+
+	osm := &OSM{}
+	err = xml.Unmarshal(data, &osm)
+	if err != nil {
+		t.Errorf("unmarshal error: %e", err)
+	}
+	relation := osm.Relations[0]
+
+	var i1 interface{}
+	err = xml.Unmarshal(data, &i1)
+	if err != nil {
+		t.Errorf("unmarshal error: %e", err)
+	}
+
+	data, err = xml.Marshal(relation)
+	if err != nil {
+		t.Errorf("marshal error: %e", err)
+	}
+
+	var i2 interface{}
+	err = xml.Unmarshal(data, &i2)
+	if err != nil {
+		t.Errorf("unmarshal error: %e", err)
+	}
+
+	if !reflect.DeepEqual(i1, i2) {
+		t.Errorf("interfaces not equal")
+		t.Logf("%+v", i1)
+		t.Logf("%+v", i2)
 	}
 }
 
