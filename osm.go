@@ -1,6 +1,9 @@
 package osm
 
-import "fmt"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 const (
 	// should be returned if the osm data is actual
@@ -78,6 +81,50 @@ func (o *OSM) ElementIDs() ElementIDs {
 	}
 
 	return result
+}
+
+func (o *OSM) marshalInnerXML(e *xml.Encoder) (err error) {
+	if o == nil {
+		return nil
+	}
+
+	if err = e.Encode(o.Bounds); err != nil {
+		return
+	}
+
+	if err = e.Encode(o.Nodes); err != nil {
+		return
+	}
+
+	if err = e.Encode(o.Ways); err != nil {
+		return
+	}
+
+	if err = e.Encode(o.Relations); err != nil {
+		return
+	}
+
+	if err = e.Encode(o.Changesets); err != nil {
+		return
+	}
+
+	if err = e.Encode(o.Notes); err != nil {
+		return
+	}
+
+	return e.Encode(o.Users)
+}
+
+func (o *OSM) marshalInnerElementsXML(e *xml.Encoder) (err error) {
+	if err = e.Encode(o.Nodes); err != nil {
+		return
+	}
+
+	if err = e.Encode(o.Ways); err != nil {
+		return
+	}
+
+	return e.Encode(o.Relations)
 }
 
 type typeS struct {
