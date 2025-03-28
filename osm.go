@@ -251,6 +251,51 @@ func (o *OSM) Objects() Objects {
 	return result
 }
 
+// Elements returns all the nodes,
+// ways and relations as a single slice of Elements.
+func (o *OSM) Elements() Elements {
+	if o == nil {
+		return nil
+	}
+
+	result := make(Elements, 0, len(o.Nodes)+len(o.Ways)+len(o.Relations))
+	for _, e := range o.Nodes {
+		result = append(result, e)
+	}
+
+	for _, e := range o.Ways {
+		result = append(result, e)
+	}
+
+	for _, e := range o.Relations {
+		result = append(result, e)
+	}
+
+	return result
+}
+
+// Append adds the given object to the OSM object.
+func (o *OSM) Append(obj Object) {
+	switch obj.ObjectID().Type() {
+	case TypeNode:
+		o.Nodes = append(o.Nodes, obj.(*Node))
+	case TypeWay:
+		o.Ways = append(o.Ways, obj.(*Way))
+	case TypeRelation:
+		o.Relations = append(o.Relations, obj.(*Relation))
+	case TypeChangeset:
+		o.Changesets = append(o.Changesets, obj.(*Changeset))
+	case TypeNote:
+		o.Notes = append(o.Notes, obj.(*Note))
+	case TypeUser:
+		o.Users = append(o.Users, obj.(*User))
+	case TypeBounds:
+		o.Bounds = obj.(*Bounds)
+	default:
+		panic(fmt.Sprintf("unsupported type: %[1]T: %[1]v", obj))
+	}
+}
+
 func (o *OSM) marshalInnerXML(e *xml.Encoder) (err error) {
 	if o == nil {
 		return nil
