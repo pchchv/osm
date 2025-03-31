@@ -111,3 +111,10 @@ func (a *Action) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 // Actions is a set of diff actions.
 type Actions []Action
+
+// Diff represents a difference of osm data with old and new data.
+type Diff struct {
+	XMLName    xml.Name   `xml:"osm"`
+	Actions    Actions    `xml:"action"`
+	Changesets Changesets `xml:"changeset"`
+}
