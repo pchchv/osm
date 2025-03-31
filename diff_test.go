@@ -131,3 +131,39 @@ func TestDiff_MarshalXML(t *testing.T) {
 		t.Errorf("unable to marshal: %e", err)
 	}
 }
+
+func BenchmarkDiff_Marshal(b *testing.B) {
+	data, err := os.ReadFile("testdata/annotated_diff.xml")
+	if err != nil {
+		b.Fatalf("unable to read file: %e", err)
+	}
+
+	diff := &Diff{}
+	if err = xml.Unmarshal(data, &diff); err != nil {
+		b.Fatalf("unmarshal error: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err = xml.Marshal(diff); err != nil {
+			b.Fatalf("marshal error: %e", err)
+		}
+	}
+}
+
+func BenchmarkDiff_Unmarshal(b *testing.B) {
+	data, err := os.ReadFile("testdata/annotated_diff.xml")
+	if err != nil {
+		b.Fatalf("unable to read file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		diff := &Diff{}
+		if err = xml.Unmarshal(data, &diff); err != nil {
+			b.Fatalf("unmarshal error: %e", err)
+		}
+	}
+}
