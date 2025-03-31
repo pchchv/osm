@@ -19,3 +19,18 @@ func NewScanner(objects osm.Objects) *Scanner {
 		objects: objects,
 	}
 }
+
+// Scan progresses the scanner to the next object.
+func (s *Scanner) Scan() bool {
+	if s.ScanError != nil {
+		return false
+	}
+
+	s.offset++
+	return s.offset < len(s.objects)
+}
+
+// Object returns the current object.
+func (s *Scanner) Object() osm.Object {
+	return s.objects[s.offset]
+}
