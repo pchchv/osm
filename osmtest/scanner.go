@@ -2,6 +2,8 @@ package osmtest
 
 import "github.com/pchchv/osm"
 
+// var _ osm.Scanner = &Scanner{}
+
 // Scanner implements the osm.Scanner interface with just a list of objects.
 type Scanner struct {
 	// ScanError can be used to trigger an error.
@@ -33,4 +35,14 @@ func (s *Scanner) Scan() bool {
 // Object returns the current object.
 func (s *Scanner) Object() osm.Object {
 	return s.objects[s.offset]
+}
+
+// Close is a stub for this test scanner.
+func (s *Scanner) Close() error {
+	return nil
+}
+
+// Err returns the scanner.ScanError.
+func (s *Scanner) Err() error {
+	return s.ScanError
 }
