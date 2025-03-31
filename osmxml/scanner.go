@@ -9,6 +9,8 @@ import (
 	"github.com/pchchv/osm"
 )
 
+var _ osm.Scanner = &Scanner{}
+
 // Scanner provides a convenient interface for reading a stream of osm data from a file or url.
 // Successive calls to the Scan method will step through the data.
 //
@@ -43,8 +45,8 @@ func New(ctx context.Context, r io.Reader) *Scanner {
 // It returns false when the scan stops, either by reaching the end of the input,
 // an io error, an xml error or the context being cancelled.
 // After Scan returns false,
-// the Error method will return any error that occurred during scanning,
-// except if it was io.EOF, Error will return nil.
+// the Err method will return any error that occurred during scanning,
+// except if it was io.EOF, Err will return nil.
 func (s *Scanner) Scan() bool {
 	if s.error != nil {
 		return false
@@ -122,4 +124,28 @@ Loop:
 //	*osm.User
 func (s *Scanner) Object() osm.Object {
 	return s.next
+}
+
+// Close causes all future calls to Scan to return false.
+// Does not close the underlying reader.
+func (s *Scanner) Close() error {
+	s.closed = true
+	s.done()
+	return nil
+}
+
+// Err returns the first non-EOF error that was encountered by the Scanner.
+func (s *Scanner) Err() error {
+	if s.error != nil {
+		if s.error == io.EOF {
+			return nil
+		}
+		return s.error
+	}
+
+	if s.closed {
+		return osm.ErrScannerClosed
+	}
+
+	return s.ctx.Err()
 }
