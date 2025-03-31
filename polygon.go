@@ -168,6 +168,57 @@ var (
 ]`)
 )
 
+// Polygon returns true if the way should be considered a closed polygon area.
+// OpenStreetMap doesn't have an intrinsic area data type.
+// The algorithm used here considers a set of heuristics to determine what is most likely an area.
+// The heuristics can be found here,
+// https://wiki.openstreetmap.org/wiki/Overpass_turbo/Polygon_Features
+// and are used by osmtogeojson and overpass turbo.
+func (w *Way) Polygon() bool {
+	if len(w.Nodes) <= 3 {
+		// need more than 3 nodes to be a polygon since first/last is repeated.
+		return false
+	}
+
+	if w.Nodes[0].ID != w.Nodes[len(w.Nodes)-1].ID {
+		// must be closed
+		return false
+	}
+
+	if area := w.Tags.Find("area"); area == "no" {
+		return false
+	} else if area != "" {
+		return true
+	}
+
+	for _, c := range polyConditions {
+		v := w.Tags.Find(c.Key)
+		if v != "" && v != "no" {
+			if c.Condition == conditionAll {
+				return true
+			} else if c.Condition == conditionWhitelist {
+				index := sort.SearchStrings(c.Values, v)
+				if index != len(c.Values) && c.Values[index] == v {
+					return true
+				}
+			} else if c.Condition == conditionBlacklist {
+				index := sort.SearchStrings(c.Values, v)
+				if index == len(c.Values) || c.Values[index] != v {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// Polygon returns true if the relation is of type multipolygon or boundary.
+func (r *Relation) Polygon() bool {
+	t := r.Tags.Find("type")
+	return t == "multipolygon" || t == "boundary"
+}
+
 type conditionType string
 
 type polyCondition struct {
