@@ -189,6 +189,35 @@ func TestAndorra(t *testing.T) {
 	}
 }
 
+func BenchmarkAndorra(b *testing.B) {
+	f, err := os.Open("../testdata/andorra-latest.osm.bz2")
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	var nodes, ways, relations int
+	r := bzip2.NewReader(f)
+	scanner := New(context.Background(), r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for scanner.Scan() {
+		switch scanner.Object().(type) {
+		case *osm.Node:
+			nodes++
+		case *osm.Way:
+			ways++
+		case *osm.Relation:
+			relations++
+		}
+	}
+
+	if scanner.Err() != nil {
+		b.Errorf("scanner returned error: %e", err)
+	}
+
+	b.Logf("nodes %d, ways %d, relations %d", nodes, ways, relations)
+}
+
 func changesetReader() io.Reader {
 	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <osm version="0.6" generator="replicate_changesets.rb" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
