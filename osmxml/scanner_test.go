@@ -2,8 +2,153 @@ package osmxml
 
 import (
 	"bytes"
+	"context"
 	"io"
+	"testing"
+
+	"github.com/pchchv/osm"
 )
+
+func TestScanner(t *testing.T) {
+	r := changesetReader()
+	scanner := New(context.Background(), r)
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	if cs := scanner.Object().(*osm.Changeset); cs.ID != 41226352 {
+		t.Fatalf("did not scan correctly, got %v", cs)
+	}
+
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read second scan: %e", scanner.Err())
+	}
+
+	if cs := scanner.Object().(*osm.Changeset); cs.ID != 41227987 {
+		t.Fatalf("did not scan correctly, got %v", cs)
+	}
+
+	if et := scanner.Object().ObjectID().Type(); et != osm.TypeChangeset {
+		t.Fatalf("did not set type correctly, got %v", et)
+	}
+
+	if cs := scanner.Object().ObjectID().Ref(); cs != 41227987 {
+		t.Fatalf("did not set id correctly, got %v", cs)
+	}
+
+	if v := scanner.Scan(); v {
+		t.Fatalf("should be finished scanning")
+	}
+}
+
+func TestScanner_Close(t *testing.T) {
+	r := changesetReader()
+	scanner := New(context.Background(), r)
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	if cs := scanner.Object().(*osm.Changeset); cs.ID != 41226352 {
+		t.Fatalf("did not scan correctly, got %v", cs)
+	}
+
+	scanner.Close()
+	if v := scanner.Scan(); v {
+		t.Fatalf("should be closed for second scan: %e", scanner.Err())
+	}
+
+	if v := scanner.Err(); v != osm.ErrScannerClosed {
+		t.Errorf("incorrect error, got %v", v)
+	}
+}
+
+func TestScanner_Err(t *testing.T) {
+	r := changesetReaderErr()
+	scanner := New(context.Background(), r)
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	if cs := scanner.Object().(*osm.Changeset); cs.ID != 41226352 {
+		t.Fatalf("did not scan correctly, got %v", cs)
+	}
+
+	if v := scanner.Scan(); v {
+		t.Fatalf("should be closed for second scan: %e", scanner.Err())
+	}
+
+	if v := scanner.Scan(); v {
+		t.Fatalf("should continue to be closed: %e", scanner.Err())
+	}
+
+	if v := scanner.Err(); v == nil {
+		t.Errorf("incorrect error, got %v", v)
+	}
+
+	scanner.Close()
+	if v := scanner.Err(); v == osm.ErrScannerClosed {
+		t.Errorf("should return xml error not closed error, got %v", v)
+	}
+}
+
+func TestScanner_context(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	r := changesetReader()
+	scanner := New(ctx, r)
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	if cs := scanner.Object().(*osm.Changeset); cs.ID != 41226352 {
+		t.Fatalf("did not scan correctly, got %v", cs)
+	}
+
+	cancel()
+	if v := scanner.Scan(); v {
+		t.Fatalf("should be closed for second scan: %e", scanner.Err())
+	}
+
+	if v := scanner.Err(); v != ctx.Err() {
+		t.Errorf("incorrect error, got %v", v)
+	}
+}
+
+func TestScanner_userNote(t *testing.T) {
+	r := userNoteReader()
+	scanner := New(context.Background(), r)
+	defer scanner.Close()
+
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	if u := scanner.Object().(*osm.User); u.ID != 1 {
+		t.Fatalf("did not scan correctly, got %v", u)
+	}
+
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	if n := scanner.Object().(*osm.Note); n.ID != 2 {
+		t.Fatalf("did not scan correctly, got %v", n)
+	}
+}
+
+func TestScanner_bounds(t *testing.T) {
+	r := boundsReader()
+	scanner := New(context.Background(), r)
+	defer scanner.Close()
+
+	if v := scanner.Scan(); !v {
+		t.Fatalf("should read first scan: %e", scanner.Err())
+	}
+
+	b := scanner.Object().(*osm.Bounds)
+	if b.MinLat != 1 || b.MinLon != 2 || b.MaxLat != 3 || b.MaxLon != 4 {
+		t.Fatalf("did not scan correctly, got: %v", b)
+	}
+}
 
 func changesetReader() io.Reader {
 	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
