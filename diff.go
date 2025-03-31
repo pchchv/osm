@@ -108,3 +108,6 @@ func (a *Action) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 	return nil
 }
+
+// Actions is a set of diff actions.
+type Actions []Action
