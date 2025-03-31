@@ -36,3 +36,22 @@ func changesetReaderErr() io.Reader {
 
 	return bytes.NewReader(data)
 }
+
+func boundsReader() io.Reader {
+	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<osm>
+	<bounds minlat="1" minlon="2" maxlat="3" maxlon="4"/>
+</osm>`)
+
+	return bytes.NewReader(data)
+}
+
+func userNoteReader() io.Reader {
+	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<osm>
+  <user id="1"></user>
+  <note><id>2</id></note>
+</osm>`)
+
+	return bytes.NewReader(data)
+}
