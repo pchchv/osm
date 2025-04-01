@@ -1,9 +1,11 @@
 package osmpbf
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -117,4 +119,59 @@ func (dec *decoder) readBlobHeaderSize(buf []byte) (uint32, error) {
 	}
 
 	return size, nil
+}
+
+func (dec *decoder) readFileBlock(sizeBuf, headerBuf, blobBuf []byte) (*osmpbf.BlobHeader, *osmpbf.Blob, error) {
+	blobHeaderSize, err := dec.readBlobHeaderSize(sizeBuf)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	headerBuf = headerBuf[:blobHeaderSize]
+	blobHeader, err := dec.readBlobHeader(headerBuf)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	blobBuf = blobBuf[:blobHeader.GetDatasize()]
+	blob, err := dec.readBlob(blobBuf)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dec.bytesRead += 4 + int64(blobHeaderSize) + int64(blobHeader.GetDatasize())
+	return blobHeader, blob, nil
+}
+
+func getData(blob *osmpbf.Blob, data []byte) ([]byte, error) {
+	switch {
+	case blob.RawSize != nil:
+		return blob.GetRaw(), nil
+	case blob.Data != nil:
+		r, err := zlibReader(blob.GetZlibData())
+		if err != nil {
+			return nil, err
+		}
+
+		// using the bytes.Buffer allows for the preallocation of the necessary space.
+		l := blob.GetRawSize() + bytes.MinRead
+		if cap(data) < int(l) {
+			data = make([]byte, 0, l+l/10)
+		} else {
+			data = data[:0]
+		}
+
+		buf := bytes.NewBuffer(data)
+		if _, err = buf.ReadFrom(r); err != nil {
+			return nil, err
+		}
+
+		if buf.Len() != int(blob.GetRawSize()) {
+			return nil, fmt.Errorf("raw blob data size %d but expected %d", buf.Len(), blob.GetRawSize())
+		}
+
+		return buf.Bytes(), nil
+	default:
+		return nil, errors.New("unknown blob data")
+	}
 }
