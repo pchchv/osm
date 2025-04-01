@@ -221,6 +221,36 @@ func (dec *decoder) Start(n int) (err error) {
 	return nil
 }
 
+// Next reads the next object from the input stream and returns either a Node,
+// Way or Relation structure representing the underlying OpenStreetMap PBF data or an error.
+// The termination of the input stream is indicated by an io.EOF error.
+func (dec *decoder) Next() (osm.Object, error) {
+	for dec.cIndex >= len(dec.cData.Objects) {
+		cd, ok := <-dec.serializer
+		if !ok || cd.Err == io.EOF {
+			if dec.cData.Err != nil {
+				return nil, dec.cData.Err
+			}
+			return nil, io.EOF
+		}
+
+		dec.pOffset = dec.cOffset
+		dec.cOffset = cd.Offset
+		dec.cData = cd
+		dec.cIndex = 0
+	}
+
+	v := dec.cData.Objects[dec.cIndex]
+	dec.cIndex++
+	return v, dec.cData.Err
+}
+
+func (dec *decoder) Close() error {
+	dec.cancel()
+	dec.wg.Wait()
+	return nil
+}
+
 func (dec *decoder) readBlob(buf []byte) (*osmpbf.Blob, error) {
 	if _, err := io.ReadFull(dec.r, buf); err != nil {
 		return nil, err
