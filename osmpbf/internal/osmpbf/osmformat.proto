@@ -24,6 +24,7 @@ syntax = "proto2";
 
 option java_package = "crosby.binary";
 package osmpbf;
+option go_package = "github.com/pchchv/osmpbf/internal/osmpbf";
 
 /* OSM Binary file format
 
