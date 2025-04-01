@@ -1,10 +1,14 @@
 package osmpbf
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
 	"os"
+	"reflect"
+	"runtime"
 	"testing"
 	"time"
 
@@ -69,6 +73,87 @@ func (ft *OSMFileTest) downloadTestOSMFile() {
 		}
 	} else if err != nil {
 		ft.Fatal(err)
+	}
+}
+
+func (ft *OSMFileTest) testDecode() {
+	ft.downloadTestOSMFile()
+	f, err := os.Open(ft.FileName)
+	if err != nil {
+		ft.Fatal(err)
+	}
+	defer f.Close()
+
+	d := newDecoder(context.Background(), &Scanner{}, f)
+	if err = d.Start(runtime.GOMAXPROCS(-1)); err != nil {
+		ft.Fatal(err)
+	}
+
+	var n *osm.Node
+	var w *osm.Way
+	var r *osm.Relation
+	var nc, wc, rc uint64
+	idsOrder := make([]string, 0, len(IDsExpectedOrder))
+	for {
+		e, err := d.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			ft.Fatal(err)
+		}
+
+		switch v := e.(type) {
+		case *osm.Node:
+			nc++
+			if v.ID == ft.ExpNode.ID {
+				n = v
+			}
+			id := fmt.Sprintf("node/%d", v.ID)
+			if _, ok := IDs[id]; ok {
+				idsOrder = append(idsOrder, id)
+			}
+		case *osm.Way:
+			wc++
+			if v.ID == ft.ExpWay.ID {
+				w = v
+			}
+			id := fmt.Sprintf("way/%d", v.ID)
+			if _, ok := IDs[id]; ok {
+				idsOrder = append(idsOrder, id)
+			}
+		case *osm.Relation:
+			rc++
+			if v.ID == ft.ExpRel.ID {
+				r = v
+			}
+			id := fmt.Sprintf("relation/%d", v.ID)
+			if _, ok := IDs[id]; ok {
+				idsOrder = append(idsOrder, id)
+			}
+		}
+	}
+	d.Close()
+
+	if !reflect.DeepEqual(ft.ExpNode, n) {
+		ft.Errorf("\nExpected: %#v\nActual:   %#v", ft.ExpNode, n)
+	}
+
+	roundCoordinates(w)
+	if !reflect.DeepEqual(ft.ExpWay, w) {
+		ft.Errorf("\nExpected: %#v\nActual:   %#v", ft.ExpWay, w)
+	}
+
+	if !reflect.DeepEqual(ft.ExpRel, r) {
+		ft.Errorf("\nExpected: %#v\nActual:   %#v", ft.ExpRel, r)
+	}
+
+	if ft.ExpNodeCount != nc || ft.ExpWayCount != wc || ft.ExpRelCount != rc {
+		ft.Errorf("\nExpected %7d nodes, %7d ways, %7d relations\nGot %7d nodes, %7d ways, %7d relations.",
+			ft.ExpNodeCount, ft.ExpWayCount, ft.ExpRelCount, nc, wc, rc)
+	}
+
+	if !reflect.DeepEqual(ft.IDsExpOrder, idsOrder) {
+		ft.Errorf("\nExpected: %v\nGot:      %v", ft.IDsExpOrder, idsOrder)
 	}
 }
 
