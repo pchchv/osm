@@ -164,3 +164,10 @@ func roundCoordinates(w *osm.Way) {
 		}
 	}
 }
+
+func init() {
+	IDs = make(map[string]bool)
+	for _, id := range IDsExpectedOrder {
+		IDs[id] = false
+	}
+}
