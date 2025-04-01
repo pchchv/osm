@@ -35,6 +35,20 @@ type dataDecoder struct {
 	keyvals        *pbr.Iterator
 }
 
+func (dec *dataDecoder) Decode(blob *osmpbf.Blob) ([]osm.Object, error) {
+	var err error
+	dec.q = make([]osm.Object, 0, 8000) // typical PrimitiveBlock contains 8k OSM entities
+	if dec.data, err = getData(blob, dec.data); err != nil {
+		return nil, err
+	}
+
+	if err = dec.scanPrimitiveBlock(dec.data); err != nil {
+		return nil, err
+	}
+
+	return dec.q, nil
+}
+
 func (dec *dataDecoder) extractDenseNodes() error {
 	var uid, usid int32
 	var id, lat, lon, timestamp, changeset int64
