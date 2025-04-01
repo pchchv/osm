@@ -2,12 +2,20 @@ package osmpbf
 
 import (
 	"context"
+	"encoding/binary"
+	"errors"
 	"io"
 	"sync"
 	"time"
 
 	"github.com/pchchv/osm"
 	"github.com/pchchv/osm/osmpbf/internal/osmpbf"
+	"google.golang.org/protobuf/proto"
+)
+
+const (
+	maxBlobSize       = 32 * 1024 * 1024
+	maxBlobHeaderSize = 64 * 1024
 )
 
 // Header contains the contents of the header in the pbf file.
@@ -66,4 +74,47 @@ func newDecoder(ctx context.Context, s *Scanner, r io.Reader) *decoder {
 		cancel:  cancel,
 		r:       r,
 	}
+}
+
+func (dec *decoder) readBlob(buf []byte) (*osmpbf.Blob, error) {
+	if _, err := io.ReadFull(dec.r, buf); err != nil {
+		return nil, err
+	}
+
+	blob := &osmpbf.Blob{}
+	if err := proto.Unmarshal(buf, blob); err != nil {
+		return nil, err
+	}
+
+	return blob, nil
+}
+
+func (dec *decoder) readBlobHeader(buf []byte) (*osmpbf.BlobHeader, error) {
+	if _, err := io.ReadFull(dec.r, buf); err != nil {
+		return nil, err
+	}
+
+	blobHeader := &osmpbf.BlobHeader{}
+	if err := proto.Unmarshal(buf, blobHeader); err != nil {
+		return nil, err
+	}
+
+	if blobHeader.GetDatasize() >= maxBlobSize {
+		return nil, errors.New("blob size >= 32Mb")
+	}
+
+	return blobHeader, nil
+}
+
+func (dec *decoder) readBlobHeaderSize(buf []byte) (uint32, error) {
+	if _, err := io.ReadFull(dec.r, buf); err != nil {
+		return 0, err
+	}
+
+	size := binary.BigEndian.Uint32(buf)
+	if size >= maxBlobHeaderSize {
+		return 0, errors.New("blobHeader size >= 64Kb")
+	}
+
+	return size, nil
 }
