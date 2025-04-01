@@ -1,6 +1,7 @@
 package osmpbf
 
 import (
+	"errors"
 	"time"
 
 	"github.com/pchchv/osm"
@@ -346,6 +347,253 @@ func (dec *dataDecoder) scanWays(data []byte, way *osm.Way) (*osm.Way, error) {
 	}
 
 	return way, nil
+}
+
+func (dec *dataDecoder) scanRelations(data []byte, relation *osm.Relation) (*osm.Relation, error) {
+	st := dec.primitiveBlock.GetStringtable().GetS()
+	dateGranularity := int64(dec.primitiveBlock.GetDateGranularity())
+	msg := pbr.New(data)
+	if relation == nil {
+		relation = &osm.Relation{Visible: true}
+	}
+
+	var foundKeys, foundVals, foundRoles, foundMemids, foundTypes bool
+	for msg.Next() {
+		var i64 int64
+		var err error
+		switch msg.FieldNumber() {
+		case 1:
+			i64, err = msg.Int64()
+			relation.ID = osm.RelationID(i64)
+		case 2:
+			dec.keys, err = msg.Iterator(dec.keys)
+			foundKeys = true
+		case 3:
+			dec.vals, err = msg.Iterator(dec.vals)
+			foundVals = true
+		case 4: // info
+			d, err := msg.MessageData()
+			if err != nil {
+				return nil, err
+			}
+
+			info := pbr.New(d)
+			for info.Next() {
+				switch info.FieldNumber() {
+				case 1:
+					v, err := info.Int32()
+					if err != nil {
+						return nil, err
+					}
+					relation.Version = int(v)
+				case 2:
+					v, err := info.Int64()
+					if err != nil {
+						return nil, err
+					}
+					millisec := time.Duration(v*dateGranularity) * time.Millisecond
+					relation.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
+				case 3:
+					v, err := info.Int64()
+					if err != nil {
+						return nil, err
+					}
+					relation.ChangesetID = osm.ChangesetID(v)
+				case 4:
+					v, err := info.Int32()
+					if err != nil {
+						return nil, err
+					}
+					relation.UserID = osm.UserID(v)
+				case 5:
+					v, err := info.Uint32()
+					if err != nil {
+						return nil, err
+					}
+					relation.User = st[v]
+				case 6:
+					v, err := info.Bool()
+					if err != nil {
+						return nil, err
+					}
+					relation.Visible = v
+				default:
+					info.Skip()
+				}
+			}
+
+			if info.Error() != nil {
+				return nil, info.Error()
+			}
+		case 8: // refs or nodes
+			dec.roles, err = msg.Iterator(dec.roles)
+			foundRoles = true
+		case 9:
+			dec.memids, err = msg.Iterator(dec.memids)
+			foundMemids = true
+		case 10:
+			dec.types, err = msg.Iterator(dec.types)
+			foundTypes = true
+		default:
+			msg.Skip()
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if msg.Error() != nil {
+		return nil, msg.Error()
+	}
+
+	var err error
+	// possible for relation to not have tags
+	if foundKeys && foundVals {
+		relation.Tags, err = scanTags(st, dec.keys, dec.vals)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// possible for relation to not have any members
+	if foundRoles && foundMemids && foundTypes {
+		relation.Members, err = extractMembers(st, dec.roles, dec.memids, dec.types)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return relation, nil
+}
+
+func (dec *dataDecoder) scanDenseNodes(data []byte) (err error) {
+	var foundIds, foundInfo, foundLats, foundLons, foundKeyVals bool
+	msg := pbr.New(data)
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 1: // ids
+			dec.ids, err = msg.Iterator(dec.ids)
+			foundIds = true
+		case 5: // dense info
+			d, err := msg.MessageData()
+			if err != nil {
+				return err
+			}
+
+			// verify that all fields are “found” because the
+			// object from the previous block is reused and
+			// cannot simply be checked for nil
+			var foundVersions, foundTimestamps, foundChangesets, foundUids, foundUsids, foundVisibles bool
+			info := pbr.New(d)
+			for info.Next() {
+				switch info.FieldNumber() {
+				case 1: // version
+					dec.versions, err = info.Iterator(dec.versions)
+					foundVersions = true
+				case 2: // timestamp
+					dec.timestamps, err = info.Iterator(dec.timestamps)
+					foundTimestamps = true
+				case 3: // changeset
+					dec.changesets, err = info.Iterator(dec.changesets)
+					foundChangesets = true
+				case 4: // uid
+					dec.uids, err = info.Iterator(dec.uids)
+					foundUids = true
+				case 5: // user_sid
+					dec.usids, err = info.Iterator(dec.usids)
+					foundUsids = true
+				case 6: // visible, optional, default true
+					dec.visibles, err = info.Iterator(dec.visibles)
+					foundVisibles = true
+				default:
+					info.Skip()
+				}
+
+				if err != nil {
+					return err
+				}
+			}
+
+			if info.Error() != nil {
+				return info.Error()
+			}
+
+			if !foundVersions {
+				dec.versions = nil
+			}
+
+			if !foundTimestamps {
+				dec.timestamps = nil
+			}
+
+			if !foundChangesets {
+				dec.changesets = nil
+			}
+
+			if !foundUids {
+				dec.uids = nil
+			}
+
+			if !foundUsids {
+				dec.usids = nil
+			}
+
+			// visibles are optional, default is true
+			if !foundVisibles {
+				dec.visibles = nil
+			}
+
+			foundInfo = true
+		case 8: // lat
+			dec.lats, err = msg.Iterator(dec.lats)
+			foundLats = true
+		case 9: // lon
+			dec.lons, err = msg.Iterator(dec.lons)
+			foundLons = true
+		case 10: // keys_vals
+			dec.keyvals, err = msg.Iterator(dec.keyvals)
+			foundKeyVals = true
+		default:
+			msg.Skip()
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if msg.Error() != nil {
+		return msg.Error()
+	}
+
+	if !foundIds {
+		return errors.New("osmpbf: dense node did not contain ids")
+	}
+
+	if !foundLats {
+		return errors.New("osmpbf: dense node did not contain latitudes")
+	}
+
+	if !foundLons {
+		return errors.New("osmpbf: dense node did not contain longitudes")
+	}
+
+	// keyvals could be empty if all nodes are tagless
+	if !foundKeyVals {
+		dec.keyvals = nil
+	}
+
+	if !foundInfo {
+		dec.versions = nil
+		dec.timestamps = nil
+		dec.changesets = nil
+		dec.uids = nil
+		dec.usids = nil
+		dec.visibles = nil
+	}
+
+	return dec.extractDenseNodes()
 }
 
 // **NOTE**, it is assumed that keys and vals have the
