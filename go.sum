@@ -1,3 +1,5 @@
+github.com/DataDog/czlib v0.0.0-20240814115052-86a9592b3985 h1:0nepyu+UcpcOt3rrr0G4PvNDuoEW2aoqtbh2NK0AQ3w=
+github.com/DataDog/czlib v0.0.0-20240814115052-86a9592b3985/go.mod h1:ROY4muaTWpoeQAx/oUkvxe9zKCmgU5xDGXsfEbA+omc=
 github.com/pchchv/geo v1.1.1 h1:JiXtD+2hQFV4OMhfiRShhz4HMdfWps45x9zTCArCmrE=
 github.com/pchchv/geo v1.1.1/go.mod h1:tJ+KCrMGEvYWjwHTVhAwRAymhdfpLZCh4yNLaznlnkw=
 go.mongodb.org/mongo-driver v1.17.3 h1:TQyXhnsWfWtgAhMtOgtYHMTkZIfBTpMTsMnd9ZBeHxQ=
