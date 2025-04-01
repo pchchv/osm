@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/osmpbf/internal/osmpbf"
 )
 
 // Header contains the contents of the header in the pbf file.
@@ -24,4 +25,13 @@ type oPair struct {
 	Offset  int64
 	Objects []osm.Object
 	Err     error
+}
+
+// iPair is a group sent over the channel to the
+// decoder goroutines that unzip and decode the
+// pbf from the headerblock.
+type iPair struct {
+	Offset int64
+	Blob   *osmpbf.Blob
+	Err    error
 }
