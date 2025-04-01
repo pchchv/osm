@@ -7,6 +7,7 @@ import (
 	"github.com/pchchv/osm"
 	"github.com/pchchv/osm/osmpbf/internal/osmpbf"
 	"github.com/pchchv/pbr"
+	"google.golang.org/protobuf/proto"
 )
 
 // dataDecoder is a decoder for Blob with OSMData (PrimitiveBlock).
@@ -594,6 +595,161 @@ func (dec *dataDecoder) scanDenseNodes(data []byte) (err error) {
 	}
 
 	return dec.extractDenseNodes()
+}
+
+func (dec *dataDecoder) scanPrimitiveGroup(data []byte) error {
+	msg := pbr.New(data)
+	way := &osm.Way{Visible: true}
+	relation := &osm.Relation{Visible: true}
+	for msg.Next() {
+		fn := msg.FieldNumber()
+		if fn == 1 {
+			panic("nodes are not supported, currently untested")
+		}
+
+		if fn == 2 && !dec.scanner.SkipNodes {
+			data, err := msg.MessageData()
+			if err != nil {
+				return err
+			}
+
+			if err = dec.scanDenseNodes(data); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		if fn == 3 && !dec.scanner.SkipWays {
+			data, err := msg.MessageData()
+			if err != nil {
+				return err
+			}
+
+			way, err = dec.scanWays(data, way)
+			if err != nil {
+				return err
+			}
+
+			if dec.scanner.FilterWay == nil || dec.scanner.FilterWay(way) {
+				dec.q = append(dec.q, way)
+				way = &osm.Way{Visible: true}
+			} else {
+				tags := way.Tags
+				nodes := way.Nodes
+				*way = osm.Way{Visible: true, Nodes: nodes[:0], Tags: tags[:0]}
+			}
+
+			continue
+		}
+
+		if fn == 4 && !dec.scanner.SkipRelations {
+			data, err := msg.MessageData()
+			if err != nil {
+				return err
+			}
+
+			relation, err = dec.scanRelations(data, relation)
+			if err != nil {
+				return err
+			}
+
+			if dec.scanner.FilterRelation == nil || dec.scanner.FilterRelation(relation) {
+				dec.q = append(dec.q, relation)
+				relation = &osm.Relation{Visible: true}
+			} else {
+				tags := relation.Tags
+				members := relation.Members
+				*relation = osm.Relation{Visible: true, Members: members[:0], Tags: tags[:0]}
+			}
+
+			continue
+		}
+
+		msg.Skip()
+	}
+
+	return msg.Error()
+}
+
+func (dec *dataDecoder) scanPrimitiveBlock(data []byte) error {
+	msg := pbr.New(data)
+	if dec.primitiveBlock == nil {
+		dec.primitiveBlock = &osmpbf.PrimitiveBlock{
+			Stringtable: &osmpbf.StringTable{},
+		}
+	} else {
+		dec.primitiveBlock.Stringtable.S = dec.primitiveBlock.Stringtable.S[:0]
+		dec.primitiveBlock.Primitivegroup = dec.primitiveBlock.Primitivegroup[:0]
+		dec.primitiveBlock.Granularity = nil
+		dec.primitiveBlock.LatOffset = nil
+		dec.primitiveBlock.LonOffset = nil
+		dec.primitiveBlock.DateGranularity = nil
+	}
+
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 1:
+			d, err := msg.MessageData()
+			if err != nil {
+				return err
+			}
+
+			if err = proto.Unmarshal(d, dec.primitiveBlock.Stringtable); err != nil {
+				return err
+			}
+		case 17:
+			v, err := msg.Int32()
+			dec.primitiveBlock.Granularity = &v
+			if err != nil {
+				return err
+			}
+		case 18:
+			v, err := msg.Int32()
+			dec.primitiveBlock.DateGranularity = &v
+			if err != nil {
+				return err
+			}
+		case 19:
+			v, err := msg.Int64()
+			dec.primitiveBlock.LatOffset = &v
+			if err != nil {
+				return err
+			}
+		case 20:
+			v, err := msg.Int64()
+			dec.primitiveBlock.LonOffset = &v
+			if err != nil {
+				return err
+			}
+		default:
+			msg.Skip()
+		}
+	}
+
+	if msg.Error() != nil {
+		return msg.Error()
+	}
+
+	// is needed the offsets and granularities for the group decoding
+	msg.Reset(nil)
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 2:
+			d, err := msg.MessageData()
+			if err != nil {
+				return err
+			}
+			err = dec.scanPrimitiveGroup(d)
+			if err != nil {
+				return err
+			}
+		default:
+			msg.Skip()
+		}
+	}
+
+	return msg.Error()
 }
 
 // **NOTE**, it is assumed that keys and vals have the
