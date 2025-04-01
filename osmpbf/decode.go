@@ -18,6 +18,8 @@ import (
 const (
 	maxBlobSize       = 32 * 1024 * 1024
 	maxBlobHeaderSize = 64 * 1024
+	osmHeaderType     = "OSMHeader"
+	osmDataType       = "OSMData"
 )
 
 var parseCapabilities = map[string]bool{
@@ -82,6 +84,141 @@ func newDecoder(ctx context.Context, s *Scanner, r io.Reader) *decoder {
 		cancel:  cancel,
 		r:       r,
 	}
+}
+
+// Start decoding process using n goroutines.
+func (dec *decoder) Start(n int) (err error) {
+	if n < 1 {
+		n = 1
+	}
+
+	dec.serializer = make(chan oPair, n)
+	sizeBuf := make([]byte, 4)
+	headerBuf := make([]byte, maxBlobHeaderSize)
+	blobBuf := make([]byte, maxBlobSize)
+	// read OSMHeader
+	// NOTE: if the first block is not a header
+	// i.e. after a restart, this block must be decoded
+	// it gets pushed on the first "input" below
+	blobHeader, blob, err := dec.readFileBlock(sizeBuf, headerBuf, blobBuf)
+	if err != nil {
+		return err
+	}
+
+	if blobHeader.GetType() == osmHeaderType {
+		if dec.header, err = decodeOSMHeader(blob); err != nil {
+			return
+		}
+	}
+
+	dec.wg.Add(n + 2)
+	// use roughly 10 chanel inputs
+	numChanels := 10 / n
+	// high level overview of the decoder:
+	// the decoder supports parallel unzipping and protobuf decoding of all the header blocks
+	// on goroutine feeds the headerblocks round-robin into the input channels
+	// n goroutines read from the input channel, decode the block and put the objects on their output channel
+	// a third type of goroutines round-robin reads the output channels and feads them into the
+	// serializer channel to maintain the order of the objects in the file
+	//
+	// start data decoders
+	for i := 0; i < n; i++ {
+		input := make(chan iPair, numChanels)
+		output := make(chan oPair, numChanels)
+		dd := &dataDecoder{scanner: dec.scanner}
+		go func() {
+			defer close(output)
+			defer dec.wg.Done()
+
+			for p := range input {
+				var out oPair
+				if p.Err == nil {
+					// send decoded objects or decoding error
+					objects, err := dd.Decode(p.Blob)
+					out = oPair{Offset: p.Offset, Objects: objects, Err: err}
+				} else {
+					out = oPair{Err: p.Err} // send input error as is
+				}
+
+				select {
+				case output <- out:
+				case <-dec.ctx.Done():
+				}
+			}
+		}()
+
+		dec.inputs = append(dec.inputs, input)
+		dec.outputs = append(dec.outputs, output)
+	}
+
+	// start reading OSMData
+	go func() {
+		defer dec.wg.Done()
+		defer func() {
+			for _, input := range dec.inputs {
+				close(input)
+			}
+		}()
+
+		var i int
+		// on restart the first block may not be a header and will need to be added to the first input
+		if blobHeader.GetType() != osmHeaderType {
+			dec.inputs[0] <- iPair{Offset: 0, Blob: blob, Err: err}
+			i = (i + 1) % n
+		}
+
+		for dec.ctx.Err() == nil || err == nil {
+			input := dec.inputs[i]
+			i = (i + 1) % n
+			offset := dec.bytesRead
+			blobHeader, blob, err = dec.readFileBlock(sizeBuf, headerBuf, blobBuf)
+			if err == nil && blobHeader.GetType() != osmDataType {
+				err = fmt.Errorf("unexpected fileblock of type %s", blobHeader.GetType())
+			}
+
+			pair := iPair{Offset: offset, Blob: blob}
+			if err != nil {
+				pair = iPair{Err: err}
+			}
+
+			select {
+			case input <- pair:
+			case <-dec.ctx.Done():
+			}
+		}
+	}()
+
+	go func() {
+		defer dec.wg.Done()
+		defer func() {
+			close(dec.serializer)
+			dec.cancel()
+		}()
+
+		for i := 0; ; i = (i + 1) % n {
+			var p oPair
+			output := dec.outputs[i]
+			select {
+			case p = <-output:
+			case <-dec.ctx.Done():
+				dec.cData.Err = dec.ctx.Err()
+				return
+			}
+
+			select {
+			case dec.serializer <- p:
+			case <-dec.ctx.Done():
+				dec.cData.Err = dec.ctx.Err()
+				return
+			}
+
+			if p.Err != nil {
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (dec *decoder) readBlob(buf []byte) (*osmpbf.Blob, error) {
