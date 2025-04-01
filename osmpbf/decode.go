@@ -20,6 +20,12 @@ const (
 	maxBlobHeaderSize = 64 * 1024
 )
 
+var parseCapabilities = map[string]bool{
+	"OsmSchema-V0.6":        true,
+	"DenseNodes":            true,
+	"HistoricalInformation": true,
+}
+
 // Header contains the contents of the header in the pbf file.
 type Header struct {
 	Bounds               *osm.Bounds
@@ -174,4 +180,53 @@ func getData(blob *osmpbf.Blob, data []byte) ([]byte, error) {
 	default:
 		return nil, errors.New("unknown blob data")
 	}
+}
+
+func decodeOSMHeader(blob *osmpbf.Blob) (*Header, error) {
+	data, err := getData(blob, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	headerBlock := &osmpbf.HeaderBlock{}
+	if err := proto.Unmarshal(data, headerBlock); err != nil {
+		return nil, err
+	}
+
+	// capability check
+	requiredFeatures := headerBlock.GetRequiredFeatures()
+	for _, feature := range requiredFeatures {
+		if !parseCapabilities[feature] {
+			return nil, fmt.Errorf("parser does not have %s capability", feature)
+		}
+	}
+
+	// read the header
+	header := &Header{
+		RequiredFeatures:   headerBlock.GetRequiredFeatures(),
+		OptionalFeatures:   headerBlock.GetOptionalFeatures(),
+		WritingProgram:     headerBlock.GetWritingprogram(),
+		Source:             headerBlock.GetSource(),
+		ReplicationBaseURL: headerBlock.GetOsmosisReplicationBaseUrl(),
+		ReplicationSeqNum:  uint64(headerBlock.GetOsmosisReplicationSequenceNumber()),
+	}
+
+	// convert timestamp epoch seconds to golang time structure if it exists
+	if headerBlock.OsmosisReplicationTimestamp != nil {
+		header.ReplicationTimestamp = time.Unix(*headerBlock.OsmosisReplicationTimestamp, 0).UTC()
+	}
+
+	// read bounding box if it exists
+	if headerBlock.Bbox != nil {
+		// units are always in nanodegree and do not obey granularity rules
+		// see osmformat.proto
+		header.Bounds = &osm.Bounds{
+			MinLon: 1e-9 * float64(*headerBlock.Bbox.Left),
+			MaxLon: 1e-9 * float64(*headerBlock.Bbox.Right),
+			MinLat: 1e-9 * float64(*headerBlock.Bbox.Bottom),
+			MaxLat: 1e-9 * float64(*headerBlock.Bbox.Top),
+		}
+	}
+
+	return header, nil
 }
