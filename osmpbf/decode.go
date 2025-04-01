@@ -17,3 +17,11 @@ type Header struct {
 	ReplicationSeqNum    uint64
 	ReplicationBaseURL   string
 }
+
+// oPair is a group sent over the channel from the decoder goroutines.
+// It will contain the list of all objects.
+type oPair struct {
+	Offset  int64
+	Objects []osm.Object
+	Err     error
+}
