@@ -1,6 +1,11 @@
 package mputil
 
-import "github.com/pchchv/geo"
+import (
+	"time"
+
+	"github.com/pchchv/geo"
+	"github.com/pchchv/osm"
+)
 
 // Segment is a section of a
 // multipolygon with some extra information on
@@ -107,4 +112,51 @@ func (ms MultiSegment) LineString() geo.LineString {
 	}
 
 	return line
+}
+
+// Group takes members and groups them into inner and outer parts of the relation.
+// It also build the way geometry.
+func Group(members osm.Members, ways map[osm.WayID]*osm.Way, at time.Time) (outer, inner []Segment, tainted bool) {
+	for i, m := range members {
+		if m.Type != osm.TypeWay {
+			continue
+		}
+
+		w := ways[osm.WayID(m.Ref)]
+		if w == nil {
+			tainted = true
+			continue // could be not found error, or something else
+		}
+
+		line := w.LineStringAt(at)
+		if len(line) != len(w.Nodes) {
+			tainted = true
+		}
+
+		// zero length ways exist and don't make any sense when
+		// building the multipolygon rings
+		if len(line) == 0 {
+			continue
+		}
+
+		l := Segment{
+			Index:       uint32(i),
+			Orientation: m.Orientation,
+			Reversed:    false,
+			Line:        line,
+		}
+		if m.Role == "outer" {
+			if l.Orientation == geo.CW {
+				l.Reverse()
+			}
+			outer = append(outer, l)
+		} else if m.Role == "inner" {
+			if l.Orientation == geo.CCW {
+				l.Reverse()
+			}
+			inner = append(inner, l)
+		}
+	}
+
+	return
 }

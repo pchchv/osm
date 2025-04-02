@@ -1,9 +1,12 @@
 package mputil
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/pchchv/geo"
+	"github.com/pchchv/osm"
 )
 
 func TestMultiSegment_Ring_noAnnotation(t *testing.T) {
@@ -198,6 +201,66 @@ func TestMultiSegment_LineString(t *testing.T) {
 	if !ls.Equal(expected) {
 		t.Errorf("incorrect line string: %v", ls)
 	}
+}
+
+func TestGroup(t *testing.T) {
+	members := osm.Members{
+		{Type: osm.TypeNode, Ref: 1},
+		{Type: osm.TypeWay, Ref: 1, Role: "outer", Orientation: geo.CW},
+		{Type: osm.TypeWay, Ref: 2, Role: "inner", Orientation: geo.CCW},
+		{Type: osm.TypeWay, Ref: 3, Role: "inner", Orientation: geo.CCW},
+		{Type: osm.TypeRelation, Ref: 3},
+	}
+	ways := map[osm.WayID]*osm.Way{
+		1: {ID: 1, Nodes: osm.WayNodes{
+			{Lat: 1.0, Lon: 2.0},
+			{Lat: 2.0, Lon: 3.0},
+		}},
+		2: {ID: 1, Nodes: osm.WayNodes{
+			{Lat: 3.0, Lon: 4.0},
+			{Lat: 4.0, Lon: 5.0},
+		}},
+	}
+	outer, inner, tainted := Group(members, ways, time.Time{})
+	if !tainted {
+		t.Errorf("should be tainted")
+	}
+
+	// outer
+	expected := []Segment{
+		{
+			Index: 1, Orientation: geo.CW, Reversed: true,
+			Line: geo.LineString{{3, 2}, {2, 1}},
+		},
+	}
+	if !reflect.DeepEqual(outer, expected) {
+		t.Errorf("incorrect outer: %+v", inner)
+	}
+
+	// inner
+	expected = []Segment{
+		{
+			Index: 2, Orientation: geo.CCW, Reversed: true,
+			Line: geo.LineString{{5, 4}, {4, 3}},
+		},
+	}
+	if !reflect.DeepEqual(inner, expected) {
+		t.Errorf("incorrect inner: %+v", inner)
+	}
+}
+
+func TestGroup_zeroLengthWays(t *testing.T) {
+	// should not panic
+	Group(
+		osm.Members{
+			{Type: osm.TypeWay, Ref: 1, Role: "outer", Orientation: geo.CW},
+			{Type: osm.TypeWay, Ref: 1, Role: "inner", Orientation: geo.CCW},
+		},
+		map[osm.WayID]*osm.Way{
+			1: {ID: 1},
+		},
+		time.Time{},
+	)
 }
 
 func testRing(t testing.TB, input MultiSegment, expected geo.Ring, orient geo.Orientation) {
