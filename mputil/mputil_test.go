@@ -6,6 +6,200 @@ import (
 	"github.com/pchchv/geo"
 )
 
+func TestMultiSegment_Ring_noAnnotation(t *testing.T) {
+	cases := []struct {
+		name        string
+		orientation geo.Orientation
+		input       MultiSegment
+		output      geo.Ring
+	}{
+		{
+			name:        "ring is direction requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Line: geo.LineString{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "ring opposite direction of requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Line: geo.LineString{{0, 0}, {1, 0}, {1, 1}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "multi segments in direction of requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Line: geo.LineString{{0, 0}, {1, 1}},
+				},
+				{
+					Line: geo.LineString{{1, 0}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "multi segments in opposite direction of requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Line: geo.LineString{{0, 0}, {1, 0}},
+				},
+				{
+					Line: geo.LineString{{1, 1}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testRing(t, tc.input, tc.output, tc.orientation)
+		})
+	}
+}
+
+func TestMultiSegment_Ring_annotation(t *testing.T) {
+	cases := []struct {
+		name        string
+		orientation geo.Orientation
+		input       MultiSegment
+		output      geo.Ring
+	}{
+		{
+			name:        "ring is direction requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Orientation: geo.CW,
+					Line:        geo.LineString{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "ring opposite direction of requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Orientation: geo.CCW,
+					Line:        geo.LineString{{0, 0}, {1, 0}, {1, 1}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "multi segments in direction of requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Orientation: geo.CW,
+					Line:        geo.LineString{{0, 0}, {1, 1}},
+				},
+				{
+					Orientation: geo.CW,
+					Line:        geo.LineString{{1, 0}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "multi segments in opposite direction of requested",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Orientation: geo.CCW,
+					Line:        geo.LineString{{0, 0}, {1, 0}},
+				},
+				{
+					Orientation: geo.CCW,
+					Line:        geo.LineString{{1, 1}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "reversed to correct",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Orientation: geo.CW,
+					Line:        geo.LineString{{0, 0}, {1, 1}},
+				},
+				{
+					Orientation: geo.CCW,
+					Reversed:    true,
+					Line:        geo.LineString{{1, 0}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+		{
+			name:        "reversed to wrong direction",
+			orientation: geo.CW,
+			input: MultiSegment{
+				{
+					Orientation: geo.CCW,
+					Line:        geo.LineString{{0, 0}, {1, 0}},
+				},
+				{
+					Orientation: geo.CW,
+					Reversed:    true,
+					Line:        geo.LineString{{1, 1}, {0, 0}},
+				},
+			},
+			output: geo.Ring{{0, 0}, {1, 1}, {1, 0}, {0, 0}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testRing(t, tc.input, tc.output, tc.orientation)
+		})
+	}
+}
+
+func TestMultiSegment_Orientation(t *testing.T) {
+	ms := MultiSegment{
+		{
+			Line: geo.LineString{{0, 0}, {1, 0}},
+		},
+		{
+			Line: geo.LineString{{1, 1}, {0, 1}},
+		},
+	}
+
+	if o := ms.Orientation(); o != geo.CCW {
+		t.Errorf("incorrect orientation: %v != %v", o, geo.CCW)
+	}
+}
+
+func TestMultiSegment_LineString(t *testing.T) {
+	ms := MultiSegment{
+		{
+			Line: geo.LineString{{1, 1}, {2, 2}},
+		},
+		{
+			Line: geo.LineString{{3, 3}, {4, 4}},
+		},
+	}
+
+	ls := ms.LineString()
+	expected := geo.LineString{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
+	if !ls.Equal(expected) {
+		t.Errorf("incorrect line string: %v", ls)
+	}
+}
+
 func testRing(t testing.TB, input MultiSegment, expected geo.Ring, orient geo.Orientation) {
 	t.Helper()
 	ring := input.Ring(orient)
