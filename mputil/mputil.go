@@ -29,3 +29,8 @@ func (s *Segment) Reverse() {
 	s.Reversed = !s.Reversed
 	s.Line.Reverse()
 }
+
+// MultiSegment is an ordered set of
+// segments that form a continuous
+// section of a multipolygon.
+type MultiSegment []Segment
