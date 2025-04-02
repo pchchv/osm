@@ -116,3 +116,8 @@ OSM PBF data comes in blocks, each block is zlib compressed. Decompressing this 
 As a result, a C compiler is necessary to install this module. On macOS this may require installing pkg-config using something like `brew install pkg-config`
 
 CGO can be disabled at build time using the `CGO_ENABLED` ENV variable. For example, `CGO_ENABLED=0 go build`. The code will fallback to the stdlib implementation of zlib.
+
+## List of sub-package utilities
+
+- [`osmpbf`](osmpbf) - stream processing of `*.osm.pbf` files
+- [`osmxml`](osmxml) - stream processing of `*.osm` xml files
