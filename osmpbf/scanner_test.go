@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -333,6 +334,222 @@ func TestScanner_FilterNodes(t *testing.T) {
 	}
 	if relations != relationsFiltered {
 		t.Errorf("incorrect results, expecting %d relations, found %d", relationsFiltered, relations)
+	}
+}
+
+func BenchmarkLondon(b *testing.B) {
+	f, err := os.Open(London)
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Seek(0, 0)
+		scanner := New(context.Background(), f, 4)
+		nodes, ways, relations := benchmarkScanner(b, scanner)
+		if nodes != 2729006 {
+			b.Errorf("wrong number of nodes, got %v", nodes)
+		}
+
+		if ways != 459055 {
+			b.Errorf("wrong number of ways, got %v", ways)
+		}
+
+		if relations != 12833 {
+			b.Errorf("wrong number of relations, got %v", relations)
+		}
+
+		scanner.Close()
+	}
+}
+
+func BenchmarkLondon_withFiltersTrue(b *testing.B) {
+	f, err := os.Open(London)
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Seek(0, 0)
+
+		scanner := New(context.Background(), f, 4)
+		scanner.FilterNode = func(*osm.Node) bool {
+			return true
+		}
+		scanner.FilterWay = func(*osm.Way) bool {
+			return true
+		}
+		scanner.FilterRelation = func(*osm.Relation) bool {
+			return true
+		}
+
+		nodes, ways, relations := benchmarkScanner(b, scanner)
+		if nodes != 2729006 {
+			b.Errorf("wrong number of nodes, got %v", nodes)
+		}
+
+		if ways != 459055 {
+			b.Errorf("wrong number of ways, got %v", ways)
+		}
+
+		if relations != 12833 {
+			b.Errorf("wrong number of relations, got %v", relations)
+		}
+
+		scanner.Close()
+	}
+}
+
+func BenchmarkLondon_withFiltersFalse(b *testing.B) {
+	f, err := os.Open(London)
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Seek(0, 0)
+		var fnodes, fways, frelations int64
+		scanner := New(context.Background(), f, 4)
+		scanner.FilterNode = func(*osm.Node) bool {
+			atomic.AddInt64(&fnodes, 1)
+			return false
+		}
+		scanner.FilterWay = func(*osm.Way) bool {
+			atomic.AddInt64(&fways, 1)
+			return false
+		}
+		scanner.FilterRelation = func(*osm.Relation) bool {
+			atomic.AddInt64(&frelations, 1)
+			return false
+		}
+
+		nodes, ways, relations := benchmarkScanner(b, scanner)
+
+		if fnodes != 2729006 {
+			b.Errorf("wrong number of nodes, got %v", fnodes)
+		}
+
+		if fways != 459055 {
+			b.Errorf("wrong number of ways, got %v", fways)
+		}
+
+		if frelations != 12833 {
+			b.Errorf("wrong number of relations, got %v", frelations)
+		}
+
+		// all filtered out
+		if nodes != 0 {
+			b.Errorf("wrong number of nodes, got %v", nodes)
+		}
+
+		if ways != 0 {
+			b.Errorf("wrong number of ways, got %v", ways)
+		}
+
+		if relations != 0 {
+			b.Errorf("wrong number of relations, got %v", relations)
+		}
+
+		scanner.Close()
+	}
+}
+
+func BenchmarkLondon_nodes(b *testing.B) {
+	f, err := os.Open(London)
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Seek(0, 0)
+
+		scanner := New(context.Background(), f, 4)
+		scanner.SkipWays = true
+		scanner.SkipRelations = true
+
+		nodes, ways, relations := benchmarkScanner(b, scanner)
+
+		if nodes != 2729006 {
+			b.Errorf("wrong number of nodes, got %v", nodes)
+		}
+
+		if ways != 0 {
+			b.Errorf("wrong number of ways, got %v", ways)
+		}
+
+		if relations != 0 {
+			b.Errorf("wrong number of relations, got %v", relations)
+		}
+
+		scanner.Close()
+	}
+}
+
+func BenchmarkLondon_ways(b *testing.B) {
+	f, err := os.Open(London)
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Seek(0, 0)
+		scanner := New(context.Background(), f, 4)
+		scanner.SkipNodes = true
+		scanner.SkipRelations = true
+		nodes, ways, relations := benchmarkScanner(b, scanner)
+		if nodes != 0 {
+			b.Errorf("wrong number of nodes, got %v", nodes)
+		}
+
+		if ways != 459055 {
+			b.Errorf("wrong number of ways, got %v", ways)
+		}
+
+		if relations != 0 {
+			b.Errorf("wrong number of relations, got %v", relations)
+		}
+
+		scanner.Close()
+	}
+}
+
+func BenchmarkLondon_relations(b *testing.B) {
+	f, err := os.Open(London)
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Seek(0, 0)
+		scanner := New(context.Background(), f, 4)
+		scanner.SkipNodes = true
+		scanner.SkipWays = true
+		nodes, ways, relations := benchmarkScanner(b, scanner)
+		if nodes != 0 {
+			b.Errorf("wrong number of nodes, got %v", nodes)
+		}
+
+		if ways != 0 {
+			b.Errorf("wrong number of ways, got %v", ways)
+		}
+
+		if relations != 12833 {
+			b.Errorf("wrong number of relations, got %v", relations)
+		}
+
+		scanner.Close()
 	}
 }
 
