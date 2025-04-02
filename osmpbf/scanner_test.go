@@ -335,3 +335,22 @@ func TestScanner_FilterNodes(t *testing.T) {
 		t.Errorf("incorrect results, expecting %d relations, found %d", relationsFiltered, relations)
 	}
 }
+
+func benchmarkScanner(b *testing.B, scanner osm.Scanner) (nodes, ways, relations int) {
+	for scanner.Scan() {
+		switch scanner.Object().(type) {
+		case *osm.Node:
+			nodes++
+		case *osm.Way:
+			ways++
+		case *osm.Relation:
+			relations++
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		b.Errorf("scanner returned error: %e", err)
+	}
+
+	return
+}
