@@ -8,6 +8,8 @@ import (
 	"github.com/pchchv/osm"
 )
 
+var _ osm.Scanner = &Scanner{}
+
 // Scanner provides a convenient interface reading a stream of osm data from a file or url.
 // Successive calls to the Scan method will step through the data.
 //
@@ -111,4 +113,27 @@ func (s *Scanner) Header() (*Header, error) {
 	}
 
 	return s.decoder.header, s.err
+}
+
+// Close cleans up all the reading goroutines,
+// it does not close the underlying reader.
+func (s *Scanner) Close() error {
+	s.closed = true
+	return s.decoder.Close()
+}
+
+// Err returns the first non-EOF error that was encountered by the Scanner.
+func (s *Scanner) Err() error {
+	if s.err != nil {
+		if s.err == io.EOF {
+			return nil
+		}
+		return s.err
+	}
+
+	if s.closed {
+		return osm.ErrScannerClosed
+	}
+
+	return s.ctx.Err()
 }
