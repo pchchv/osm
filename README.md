@@ -1,4 +1,4 @@
-# OSM [![Go Report Card](https://goreportcard.com/badge/github.com/pchchv/osm)](https://goreportcard.com/report/github.com/pchchv/osm) [![Godoc Reference](https://pkg.go.dev/badge/github.com/pchchv/osm)](https://pkg.go.dev/github.com/pchchv/osm)
+# OSM [![CI](https://github.com/pchchv/osm/workflows/CI/badge.svg)](https://github.com/pchchv/osm/actions?query=workflow%3ACI+event%3Apush) [![Go Report Card](https://goreportcard.com/badge/github.com/pchchv/osm)](https://goreportcard.com/report/github.com/pchchv/osm) [![Godoc Reference](https://pkg.go.dev/badge/github.com/pchchv/osm)](https://pkg.go.dev/github.com/pchchv/osm)
 
 **OSM** package is a general purpose library for reading, writing and working with [OpenStreetMap](https://osm.org) data in Go.   
 It has the ability to:
@@ -70,7 +70,7 @@ BenchmarkChange_UnmarshalJSON-12     287707        317723        +10.43%
 
 For small data it is possible to use the `encoding/xml` package in the Go stdlib to marshal/unmarshal the data. This is typically done using the `osm.OSM` or `osm.Change` "container" structs.
 
-For large data the package defines the `Scanner` interface implemented in both the [osmxml](osmxml).
+For large data the package defines the `Scanner` interface implemented in both the [osmxml](osmxml) and [osmpbf](osmpbf) sub-packages.
 
 ```go
 type osm.Scanner interface {
@@ -81,4 +81,38 @@ type osm.Scanner interface {
 }
 ```
 
+This interface is designed to mimic the [bufio.Scanner](https://golang.org/pkg/bufio/#Scanner)
+interface found in the Go standard library.
+
+Example usage:
+
+```go
+f, err := os.Open("./delaware-latest.osm.pbf")
+if err != nil {
+	panic(err)
+}
+defer f.Close()
+
+scanner := osmpbf.New(context.Background(), f, 3)
+defer scanner.Close()
+
+for scanner.Scan() {
+	o := scanner.Object()
+	// do something
+}
+
+scanErr := scanner.Err()
+if scanErr != nil {
+	panic(scanErr)
+}
+```
+
 **Note:** Scanners are **not** safe for parallel use. Objects must be fed into the channel and workers must read from it.
+
+## CGO and zlib
+
+OSM PBF data comes in blocks, each block is zlib compressed. Decompressing this data takes about 33% of the total read time. [DataDog/czlib](https://github.com/DataDog/czlib) is used to speed this process. See [osmpbf/README.md](osmpbf#using-cgoczlib-for-decompression) for more details.
+
+As a result, a C compiler is necessary to install this module. On macOS this may require installing pkg-config using something like `brew install pkg-config`
+
+CGO can be disabled at build time using the `CGO_ENABLED` ENV variable. For example, `CGO_ENABLED=0 go build`. The code will fallback to the stdlib implementation of zlib.
