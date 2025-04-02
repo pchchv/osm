@@ -3,6 +3,7 @@ package osmpbf
 import (
 	"context"
 	"io"
+	"sync/atomic"
 
 	"github.com/pchchv/osm"
 )
@@ -47,4 +48,46 @@ func New(ctx context.Context, r io.Reader, procs int) *Scanner {
 	}
 	s.decoder = newDecoder(ctx, s, r)
 	return s
+}
+
+// Scan advances the Scanner to the next element,
+// which will then be available through the Element method.
+// It returns false when the scan stops,
+// either by reaching the end of the input,
+// an io error, an xml error or the context being cancelled.
+// After Scan returns false,
+// the Err method will return any error that occurred during scanning,
+// except that if it was io.EOF, Err will return nil.
+func (s *Scanner) Scan() bool {
+	if !s.started {
+		s.started = true
+		s.err = s.decoder.Start(s.procs)
+	}
+
+	if s.err != nil || s.closed || s.ctx.Err() != nil {
+		return false
+	}
+
+	s.next, s.err = s.decoder.Next()
+	return s.err == nil
+}
+
+// FullyScannedBytes returns the number of bytes that have been read and fully scanned.
+// OSM protobuf files contain data blocks with 8000 nodes each.
+// The returned value contains the bytes for the blocks that have been fully scanned.
+//
+// A user can use this number of seek forward in a file and begin reading mid-data.
+// Note that while elements are usually sorted by Type, ID, Version in OSM protobuf files,
+// versions of given element may span blocks.
+func (s *Scanner) FullyScannedBytes() int64 {
+	return atomic.LoadInt64(&s.decoder.cOffset)
+}
+
+// PreviousFullyScannedBytes returns the previous value of FullyScannedBytes.
+// This is interesting because it's not totally clear if a feature spans a block.
+// For example, if one quits after finding the first relation,
+// upon restarting there is no way of knowing if the first relation is complete, so skip it.
+// But if this relation is the first relation in the file we'll skip a full relation.
+func (s *Scanner) PreviousFullyScannedBytes() int64 {
+	return atomic.LoadInt64(&s.decoder.pOffset)
 }
