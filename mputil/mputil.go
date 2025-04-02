@@ -34,3 +34,14 @@ func (s *Segment) Reverse() {
 // segments that form a continuous
 // section of a multipolygon.
 type MultiSegment []Segment
+
+// First returns the first point in the list of linestrings.
+func (ms MultiSegment) First() geo.Point {
+	return ms[0].Line[0]
+}
+
+// Last returns the last point in the list of linestrings.
+func (ms MultiSegment) Last() geo.Point {
+	line := ms[len(ms)-1].Line
+	return line[len(line)-1]
+}
