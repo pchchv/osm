@@ -160,6 +160,37 @@ func (ctx *context) wayToLineString(w *osm.Way) (geo.LineString, bool) {
 	return ls, tainted
 }
 
+func (ctx *context) wayToFeature(w *osm.Way) *geojson.Feature {
+	ls, tainted := ctx.wayToLineString(w)
+	if len(ls) <= 1 {
+		// one node ways are ignored
+		return nil
+	}
+
+	var f *geojson.Feature
+	if w.Polygon() {
+		p := geo.Polygon{toRing(ls)}
+		reorient(p)
+		f = geojson.NewFeature(p)
+	} else {
+		f = geojson.NewFeature(ls)
+	}
+
+	if !ctx.noID {
+		f.ID = fmt.Sprintf("way/%d", w.ID)
+	}
+
+	f.Properties["id"] = int(w.ID)
+	f.Properties["type"] = "way"
+	f.Properties["tags"] = w.Tags.Map()
+	if tainted {
+		f.Properties["tainted"] = true
+	}
+
+	ctx.addMetaProperties(f.Properties, w)
+	return f
+}
+
 func (ctx *context) buildRouteLineString(relation *osm.Relation) *geojson.Feature {
 	var tainted bool
 	lines := make([]mputil.Segment, 0, 10)
