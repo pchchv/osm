@@ -142,3 +142,32 @@ func (ctx *context) nodeToFeature(n *osm.Node) *geojson.Feature {
 
 	return f
 }
+
+func toRing(ls geo.LineString) geo.Ring {
+	if len(ls) < 2 {
+		return geo.Ring(ls)
+	}
+
+	// duplicate last point
+	if ls[0] != ls[len(ls)-1] {
+		return geo.Ring(append(ls, ls[0]))
+	}
+
+	return geo.Ring(ls)
+}
+
+func hasInterestingTags(tags osm.Tags, ignore map[string]string) bool {
+	if len(tags) == 0 {
+		return false
+	}
+
+	for _, tag := range tags {
+		k, v := tag.Key, tag.Value
+		if !osm.UninterestingTags[k] &&
+			(ignore == nil || !(ignore[k] == "true" || ignore[k] == v)) {
+			return true
+		}
+	}
+
+	return false
+}
