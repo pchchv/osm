@@ -8,6 +8,75 @@ import (
 	"github.com/pchchv/osm"
 )
 
+const benchGeoJSON = "../testdata/geojson_benchmark.osm"
+
+func BenchmarkConvert(b *testing.B) {
+	o := parseFile(b, benchGeoJSON)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := Convert(o); err != nil {
+			b.Fatalf("convert error: %e", err)
+		}
+	}
+}
+
+func BenchmarkConvertAnnotated(b *testing.B) {
+	o := parseFile(b, benchGeoJSON)
+	annotate(o)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := Convert(o); err != nil {
+			b.Fatalf("convert error: %e", err)
+		}
+	}
+}
+
+func BenchmarkConvert_NoID(b *testing.B) {
+	o := parseFile(b, benchGeoJSON)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := Convert(o, NoID(true)); err != nil {
+			b.Fatalf("convert error: %e", err)
+		}
+	}
+}
+
+func BenchmarkConvert_NoMeta(b *testing.B) {
+	o := parseFile(b, benchGeoJSON)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := Convert(o, NoMeta(true)); err != nil {
+			b.Fatalf("convert error: %e", err)
+		}
+	}
+}
+
+func BenchmarkConvert_NoRelationMembership(b *testing.B) {
+	o := parseFile(b, benchGeoJSON)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := Convert(o, NoRelationMembership(true)); err != nil {
+			b.Fatalf("convert error: %e", err)
+		}
+	}
+}
+
+func BenchmarkConvert_NoIDsMetaMembership(b *testing.B) {
+	o := parseFile(b, benchGeoJSON)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := Convert(o, NoID(true), NoMeta(true), NoRelationMembership(true)); err != nil {
+			b.Fatalf("convert error: %e", err)
+		}
+	}
+}
+
 func parseFile(t testing.TB, filename string) (o *osm.OSM) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
