@@ -7,6 +7,11 @@ import (
 	"github.com/pchchv/osm"
 )
 
+type rawFC struct {
+	Type     string        `json:"type"`
+	Features []interface{} `json:"features"`
+}
+
 func TestBuildRouteLineString(t *testing.T) {
 	ctx := &context{
 		osm:       &osm.OSM{},
