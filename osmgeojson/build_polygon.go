@@ -221,3 +221,15 @@ func (ctx *context) buildPolygon(relation *osm.Relation) *geojson.Feature {
 
 	return f
 }
+
+func reorient(p geo.Polygon) {
+	if p[0].Orientation() != geo.CCW {
+		p[0].Reverse()
+	}
+
+	for i := 1; i < len(p); i++ {
+		if p[i].Orientation() != geo.CW {
+			p[i].Reverse()
+		}
+	}
+}
