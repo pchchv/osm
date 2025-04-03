@@ -6,6 +6,7 @@ import (
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/mputil"
 )
 
 type relationSummary struct {
@@ -139,6 +140,88 @@ func (ctx *context) nodeToFeature(n *osm.Node) *geojson.Feature {
 	f.Properties["type"] = "node"
 	f.Properties["tags"] = n.Tags.Map()
 	ctx.addMetaProperties(f.Properties, n)
+
+	return f
+}
+
+func (ctx *context) wayToLineString(w *osm.Way) (geo.LineString, bool) {
+	var tainted bool
+	ls := make(geo.LineString, 0, len(w.Nodes))
+	for _, wn := range w.Nodes {
+		if wn.Lon != 0 || wn.Lat != 0 {
+			ls = append(ls, geo.Point{wn.Lon, wn.Lat})
+		} else if n := ctx.getNode(wn.ID); n != nil {
+			ls = append(ls, geo.Point{n.Lon, n.Lat})
+		} else {
+			tainted = true
+		}
+	}
+
+	return ls, tainted
+}
+
+func (ctx *context) buildRouteLineString(relation *osm.Relation) *geojson.Feature {
+	var tainted bool
+	lines := make([]mputil.Segment, 0, 10)
+	for _, m := range relation.Members {
+		if m.Type != osm.TypeWay {
+			continue
+		}
+
+		way := ctx.wayMap[osm.WayID(m.Ref)]
+		if way == nil {
+			tainted = true
+			continue
+		}
+
+		if !hasInterestingTags(way.Tags, nil) {
+			ctx.skippable[way.ID] = struct{}{}
+		}
+
+		ls, t := ctx.wayToLineString(way)
+		if t {
+			tainted = true
+		}
+
+		if len(ls) == 0 {
+			continue
+		}
+
+		lines = append(lines, mputil.Segment{
+			Orientation: m.Orientation,
+			Line:        ls,
+		})
+	}
+
+	if len(lines) == 0 {
+		return nil
+	}
+
+	var geometry geo.Geometry
+	lineSections := mputil.Join(lines)
+	if len(lineSections) == 1 {
+		geometry = lineSections[0].LineString()
+	} else {
+		mls := make(geo.MultiLineString, 0, len(lines))
+		for _, ls := range lineSections {
+			mls = append(mls, ls.LineString())
+		}
+		geometry = mls
+	}
+
+	f := geojson.NewFeature(geometry)
+	if !ctx.noID {
+		f.ID = fmt.Sprintf("relation/%d", relation.ID)
+	}
+
+	f.Properties["id"] = int(relation.ID)
+	f.Properties["type"] = "relation"
+	if tainted {
+		f.Properties["tainted"] = true
+	}
+
+	f.Properties["tags"] = relation.Tags.Map()
+	ctx.addMetaProperties(f.Properties, relation)
 
 	return f
 }
