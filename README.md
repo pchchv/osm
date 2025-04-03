@@ -119,5 +119,6 @@ CGO can be disabled at build time using the `CGO_ENABLED` ENV variable. For exam
 
 ## List of sub-package utilities
 
+- [`osmgeojson`](osmgeojson) - converts OSM data to GeoJSON
 - [`osmpbf`](osmpbf) - stream processing of `*.osm.pbf` files
 - [`osmxml`](osmxml) - stream processing of `*.osm` xml files
