@@ -257,6 +257,121 @@ func (ctx *context) buildRouteLineString(relation *osm.Relation) *geojson.Featur
 	return f
 }
 
+// Convert takes a set of osm elements and converts them to a geojson feature collection.
+func Convert(o *osm.OSM, opts ...Option) (*geojson.FeatureCollection, error) {
+	ctx := &context{
+		osm:       o,
+		skippable: make(map[osm.WayID]struct{}),
+	}
+
+	for _, opt := range opts {
+		if err := opt(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	ctx.wayMap = make(map[osm.WayID]*osm.Way, len(o.Ways))
+	for _, w := range ctx.osm.Ways {
+		ctx.wayMap[w.ID] = w
+	}
+
+	ctx.wayMember = make(map[osm.NodeID]struct{}, len(ctx.osm.Nodes))
+	for _, w := range ctx.osm.Ways {
+		for i := range w.Nodes {
+			ctx.wayMember[w.Nodes[i].ID] = struct{}{}
+		}
+	}
+
+	// figure out relation membership map
+	ctx.relationMember = make(map[osm.FeatureID][]*relationSummary)
+	for _, relation := range ctx.osm.Relations {
+		var tags map[string]string
+		for _, m := range relation.Members {
+			if ctx.noRelationMembership && m.Type != osm.TypeNode {
+				// if it's not necessary to do relation membership,
+				// it's only need for nodes to check if they're interesting
+				continue
+			}
+
+			if m.Type == osm.TypeWay {
+				// need to store the way membership for ways that are present
+				// eg. relations could have thousands of members but only a few in set of osm
+				if _, ok := ctx.wayMap[osm.WayID(m.Ref)]; !ok {
+					continue
+				}
+			}
+
+			if tags == nil {
+				tags = relation.Tags.Map()
+			}
+
+			fid := m.FeatureID()
+			ctx.relationMember[fid] = append(ctx.relationMember[fid], &relationSummary{
+				ID:   relation.ID,
+				Role: m.Role,
+				Tags: tags,
+			})
+		}
+	}
+
+	features := make([]*geojson.Feature, 0, len(ctx.osm.Relations)+len(ctx.osm.Ways))
+	// relations
+	for _, relation := range ctx.osm.Relations {
+		tt := relation.Tags.Find("type")
+		if tt == "route" {
+			feature := ctx.buildRouteLineString(relation)
+			if feature != nil {
+				features = append(features, feature)
+			}
+		} else if tt == "multipolygon" || tt == "boundary" {
+			feature := ctx.buildPolygon(relation)
+			if feature != nil {
+				features = append(features, feature)
+			}
+		}
+
+		// NOTE: skip/ignore relation that aren't multipolygons, boundaries or routes
+	}
+
+	for _, way := range ctx.osm.Ways {
+		// should skip only skippable relation members
+		if _, skip := ctx.skippable[way.ID]; skip {
+			continue
+		}
+
+		feature := ctx.wayToFeature(way)
+		if feature != nil {
+			features = append(features, feature)
+		}
+	}
+
+	for _, node := range ctx.osm.Nodes {
+		// should NOT skip if any are true:
+		//   not a member of a way
+		//   a member of a relation member
+		//   has any interesting tags
+		// should skip if all are true:
+		//   a member of a way
+		//   not a member of a relation member
+		//   does not have any interesting tags
+		if _, ok := ctx.wayMember[node.ID]; ok &&
+			len(ctx.relationMember[node.FeatureID()]) == 0 &&
+			!hasInterestingTags(node.Tags, nil) {
+			continue
+		}
+
+		feature := ctx.nodeToFeature(node)
+		if feature != nil {
+			features = append(features, feature)
+		}
+	}
+
+	fc := geojson.NewFeatureCollection()
+	fc.Features = features
+
+	return fc, nil
+}
+
 func toRing(ls geo.LineString) geo.Ring {
 	if len(ls) < 2 {
 		return geo.Ring(ls)
