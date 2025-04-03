@@ -2,6 +2,8 @@ package osmgeojson
 
 import (
 	"encoding/json"
+	"encoding/xml"
+	"reflect"
 	"testing"
 
 	"github.com/pchchv/geo"
@@ -76,4 +78,56 @@ func jsonMarshalIndent(t *testing.T, raw interface{}) string {
 	}
 
 	return string(data)
+}
+
+func testConvert(t *testing.T, rawXML string, expected *geojson.FeatureCollection, opts ...Option) {
+	t.Helper()
+	o := &osm.OSM{}
+	if err := xml.Unmarshal([]byte(rawXML), &o); err != nil {
+		t.Fatalf("failed to unmarshal xml: %e", err)
+	}
+
+	// clean up expected a bit
+	for _, f := range expected.Features {
+		if f.Properties["tags"] == nil {
+			f.Properties["tags"] = map[string]string{}
+		}
+
+		if f.Properties["meta"] == nil {
+			f.Properties["meta"] = map[string]interface{}{}
+		}
+
+		if f.Properties["relations"] == nil {
+			f.Properties["relations"] = []*relationSummary{}
+		} else {
+			for _, rs := range f.Properties["relations"].([]*relationSummary) {
+				if rs.Tags == nil {
+					rs.Tags = map[string]string{}
+				}
+			}
+		}
+	}
+
+	fc, err := Convert(o, opts...)
+	if err != nil {
+		t.Fatalf("convert error: %e", err)
+	}
+
+	raw := jsonLoop(t, fc)
+	expectedRaw := jsonLoop(t, expected)
+	if !reflect.DeepEqual(raw, expectedRaw) {
+		if len(raw.Features) != len(expectedRaw.Features) {
+			t.Logf("%v", jsonMarshalIndent(t, raw))
+			t.Logf("%v", jsonMarshalIndent(t, expectedRaw))
+			t.Errorf("not equal")
+		} else {
+			for i := range expectedRaw.Features {
+				if !reflect.DeepEqual(raw.Features[i], expectedRaw.Features[i]) {
+					t.Logf("%v", jsonMarshalIndent(t, raw.Features[i]))
+					t.Logf("%v", jsonMarshalIndent(t, expectedRaw.Features[i]))
+					t.Errorf("Feature %d not equal", i)
+				}
+			}
+		}
+	}
 }
