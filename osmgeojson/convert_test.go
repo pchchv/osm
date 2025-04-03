@@ -1,9 +1,11 @@
 package osmgeojson
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/geojson"
 	"github.com/pchchv/osm"
 )
 
@@ -51,4 +53,27 @@ func TestBuildRouteLineString(t *testing.T) {
 	if feature != nil {
 		t.Errorf("should not return feature if no ways present: %v", feature)
 	}
+}
+
+func jsonLoop(t *testing.T, fc *geojson.FeatureCollection) *rawFC {
+	data, err := json.Marshal(fc)
+	if err != nil {
+		t.Fatalf("unable to marshal fc: %e", err)
+	}
+
+	result := &rawFC{}
+	if err = json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("unable to unmarshal data: %e", err)
+	}
+
+	return result
+}
+
+func jsonMarshalIndent(t *testing.T, raw interface{}) string {
+	data, err := json.MarshalIndent(raw, "", " ")
+	if err != nil {
+		t.Fatalf("unable to marshal json: %e", err)
+	}
+
+	return string(data)
 }
