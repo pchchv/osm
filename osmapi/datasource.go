@@ -33,3 +33,8 @@ func NewDatasource(client *http.Client) *Datasource {
 		Client: client,
 	}
 }
+
+// NotFoundError means 404 from the api.
+type NotFoundError struct {
+	URL string
+}
