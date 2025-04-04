@@ -35,6 +35,16 @@ func NewDatasource(client *http.Client) *Datasource {
 	}
 }
 
+// NotFound returns true if the result is not found.
+func (ds *Datasource) NotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, ok := err.(*NotFoundError)
+	return ok
+}
+
 // NotFoundError means 404 from the api.
 type NotFoundError struct {
 	URL string
