@@ -116,3 +116,22 @@ func (ds *Datasource) NodeHistory(ctx context.Context, id osm.NodeID) (osm.Nodes
 
 	return o.Nodes, nil
 }
+
+// Node returns the latest version of the node from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Node(ctx context.Context, id osm.NodeID, opts ...FeatureOption) (*osm.Node, error) {
+	return DefaultDatasource.Node(ctx, id, opts...)
+}
+
+// Nodes returns the latest version of the nodes from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Nodes(ctx context.Context, ids []osm.NodeID, opts ...FeatureOption) (osm.Nodes, error) {
+	return DefaultDatasource.Nodes(ctx, ids, opts...)
+}
+
+// NodeRelations returns all relations a node is part of.
+// There is no error if the element does not exist.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func NodeRelations(ctx context.Context, id osm.NodeID, opts ...FeatureOption) (osm.Relations, error) {
+	return DefaultDatasource.NodeRelations(ctx, id, opts...)
+}
