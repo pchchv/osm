@@ -90,6 +90,32 @@ func (ds *Datasource) RelationFull(ctx context.Context, id osm.RelationID, opts 
 	return o, nil
 }
 
+// RelationVersion returns the specific version of the relation from the osm rest api.
+func (ds *Datasource) RelationVersion(ctx context.Context, id osm.RelationID, v int) (*osm.Relation, error) {
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/relation/%d/%d", ds.baseURL(), id, v)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	if l := len(o.Relations); l != 1 {
+		return nil, fmt.Errorf("wrong number of relations, expected 1, got %v", l)
+	}
+
+	return o.Relations[0], nil
+}
+
+// RelationHistory returns all the versions of the relation from the osm rest api.
+func (ds *Datasource) RelationHistory(ctx context.Context, id osm.RelationID) (osm.Relations, error) {
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/relation/%d/history", ds.baseURL(), id)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	return o.Relations, nil
+}
+
 // Relation returns the latest version of the relation from the osm rest api.
 // Delegates to the DefaultDatasource and uses its http.Client to make the request.
 func Relation(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (*osm.Relation, error) {
