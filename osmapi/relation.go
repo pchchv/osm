@@ -89,3 +89,22 @@ func (ds *Datasource) RelationFull(ctx context.Context, id osm.RelationID, opts 
 
 	return o, nil
 }
+
+// Relation returns the latest version of the relation from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Relation(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (*osm.Relation, error) {
+	return DefaultDatasource.Relation(ctx, id, opts...)
+}
+
+// Relations returns the latest version of the relations from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Relations(ctx context.Context, ids []osm.RelationID, opts ...FeatureOption) (osm.Relations, error) {
+	return DefaultDatasource.Relations(ctx, ids, opts...)
+}
+
+// RelationRelations returns all relations a relation is part of.
+// There is no error if the element does not exist.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func RelationRelations(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (osm.Relations, error) {
+	return DefaultDatasource.RelationRelations(ctx, id, opts...)
+}
