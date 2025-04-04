@@ -135,3 +135,22 @@ func Nodes(ctx context.Context, ids []osm.NodeID, opts ...FeatureOption) (osm.No
 func NodeRelations(ctx context.Context, id osm.NodeID, opts ...FeatureOption) (osm.Relations, error) {
 	return DefaultDatasource.NodeRelations(ctx, id, opts...)
 }
+
+// NodeWays returns all ways a node is part of.
+// There is no error if the element does not exist.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func NodeWays(ctx context.Context, id osm.NodeID, opts ...FeatureOption) (osm.Ways, error) {
+	return DefaultDatasource.NodeWays(ctx, id, opts...)
+}
+
+// NodeVersion returns the specific version of the node from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func NodeVersion(ctx context.Context, id osm.NodeID, v int) (*osm.Node, error) {
+	return DefaultDatasource.NodeVersion(ctx, id, v)
+}
+
+// NodeHistory returns all the versions of the node from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func NodeHistory(ctx context.Context, id osm.NodeID) (osm.Nodes, error) {
+	return DefaultDatasource.NodeHistory(ctx, id)
+}
