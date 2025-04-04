@@ -2,9 +2,23 @@ package osmapi
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"net/http"
+	"time"
 )
+
+// BaseURL defines the api host.
+// This can be change to hit a dev server.
+const BaseURL = "http://api.openstreetmap.org/api/0.6"
+
+// DefaultDatasource is the Datasource used by package level convenience functions.
+var DefaultDatasource = &Datasource{
+	BaseURL: BaseURL,
+	Client: &http.Client{
+		Timeout: 6 * time.Minute, // looks like the api server has a 5 min timeout.
+	},
+}
 
 // RateLimiter waits until the next allowed request.
 // This interface is met by `golang.org/x/time/rate.Limiter`
@@ -43,6 +57,66 @@ func (ds *Datasource) NotFound(err error) bool {
 
 	_, ok := err.(*NotFoundError)
 	return ok
+}
+
+func (ds *Datasource) getFromAPI(ctx context.Context, url string, item interface{}) (err error) {
+	client := ds.Client
+	if client == nil {
+		client = DefaultDatasource.Client
+		if client == nil {
+			client = http.DefaultClient
+		}
+	}
+
+	if ds.Limiter != nil {
+		if err = ds.Limiter.Wait(ctx); err != nil {
+			return err
+		}
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return &NotFoundError{URL: url}
+	}
+
+	if resp.StatusCode == http.StatusForbidden {
+		return &ForbiddenError{URL: url}
+	}
+
+	if resp.StatusCode == http.StatusGone {
+		return &GoneError{URL: url}
+	}
+
+	if resp.StatusCode == http.StatusRequestURITooLong {
+		return &RequestURITooLongError{URL: url}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return &UnexpectedStatusCodeError{
+			Code: resp.StatusCode,
+			URL:  url,
+		}
+	}
+
+	return xml.NewDecoder(resp.Body).Decode(item)
+}
+
+func (ds *Datasource) baseURL() string {
+	if ds.BaseURL != "" {
+		return ds.BaseURL
+	}
+
+	return BaseURL
 }
 
 // NotFoundError means 404 from the api.
