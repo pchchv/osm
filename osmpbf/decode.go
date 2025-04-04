@@ -318,9 +318,10 @@ func (dec *decoder) readFileBlock(sizeBuf, headerBuf, blobBuf []byte) (*osmpbf.B
 
 func getData(blob *osmpbf.Blob, data []byte) ([]byte, error) {
 	switch {
-	case blob.RawSize != nil:
+	case blob.Raw != nil:
 		return blob.GetRaw(), nil
-	case blob.Data != nil:
+
+	case blob.ZlibData != nil:
 		r, err := zlibReader(blob.GetZlibData())
 		if err != nil {
 			return nil, err
