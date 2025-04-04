@@ -2,6 +2,7 @@ package osmapi
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -37,4 +38,9 @@ func NewDatasource(client *http.Client) *Datasource {
 // NotFoundError means 404 from the api.
 type NotFoundError struct {
 	URL string
+}
+
+// Error returns an error message with the url causing the problem.
+func (e *NotFoundError) Error() string {
+	return fmt.Sprintf("osmapi: not found at %s", e.URL)
 }
