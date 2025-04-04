@@ -66,3 +66,24 @@ type UnexpectedStatusCodeError struct {
 func (e *UnexpectedStatusCodeError) Error() string {
 	return fmt.Sprintf("osmapi: unexpected status code of %d for url %s", e.Code, e.URL)
 }
+
+// RequestURITooLongError is returned when requesting too many ids in
+// a multi id request, ie. Nodes, Ways, Relations functions.
+type RequestURITooLongError struct {
+	URL string
+}
+
+// Error returns an error message with the url causing the problem.
+func (e *RequestURITooLongError) Error() string {
+	return fmt.Sprintf("osmapi: uri too long at %s", e.URL)
+}
+
+// GoneError is returned for deleted elements that get 410 from the api.
+type GoneError struct {
+	URL string
+}
+
+// Error returns an error message with the url causing the problem.
+func (e *GoneError) Error() string {
+	return fmt.Sprintf("osmapi: gone at %s", e.URL)
+}
