@@ -792,7 +792,7 @@ func scanTags(stringTable []string, keys, vals *pbr.Iterator) (osm.Tags, error) 
 	return tags, nil
 }
 
-// Makes relation members from a stringtable and three parallel arrays of IDs.
+// extractMembers makes relation members from stringtable and three parallel arrays of IDs.
 func extractMembers(st []string, roles *pbr.Iterator, memids *pbr.Iterator, types *pbr.Iterator) (osm.Members, error) {
 	var index, memID int64
 	members := make(osm.Members, types.Count(pbr.WireTypeVarint))
