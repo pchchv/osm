@@ -134,3 +134,21 @@ func Relations(ctx context.Context, ids []osm.RelationID, opts ...FeatureOption)
 func RelationRelations(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (osm.Relations, error) {
 	return DefaultDatasource.RelationRelations(ctx, id, opts...)
 }
+
+// RelationFull returns the relation and its nodes for the latest version the relation.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func RelationFull(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (*osm.OSM, error) {
+	return DefaultDatasource.RelationFull(ctx, id, opts...)
+}
+
+// RelationVersion returns the specific version of the relation from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func RelationVersion(ctx context.Context, id osm.RelationID, v int) (*osm.Relation, error) {
+	return DefaultDatasource.RelationVersion(ctx, id, v)
+}
+
+// RelationHistory returns all the versions of the relation from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func RelationHistory(ctx context.Context, id osm.RelationID) (osm.Relations, error) {
+	return DefaultDatasource.RelationHistory(ctx, id)
+}
