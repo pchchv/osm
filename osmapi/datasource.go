@@ -44,3 +44,25 @@ type NotFoundError struct {
 func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("osmapi: not found at %s", e.URL)
 }
+
+// ForbiddenError means 403 from the api.
+// Returned whenever the version of the element is not available (due to redaction).
+type ForbiddenError struct {
+	URL string
+}
+
+// Error returns an error message with the url causing the problem.
+func (e *ForbiddenError) Error() string {
+	return fmt.Sprintf("osmapi: forbidden at %s", e.URL)
+}
+
+// UnexpectedStatusCodeError is return for a non 200 or 404 status code.
+type UnexpectedStatusCodeError struct {
+	Code int
+	URL  string
+}
+
+// Error returns an error message with some information.
+func (e *UnexpectedStatusCodeError) Error() string {
+	return fmt.Sprintf("osmapi: unexpected status code of %d for url %s", e.Code, e.URL)
+}
