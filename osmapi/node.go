@@ -90,3 +90,29 @@ func (ds *Datasource) NodeWays(ctx context.Context, id osm.NodeID, opts ...Featu
 
 	return o.Ways, nil
 }
+
+// NodeVersion returns the specific version of the node from the osm rest api.
+func (ds *Datasource) NodeVersion(ctx context.Context, id osm.NodeID, v int) (*osm.Node, error) {
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/node/%d/%d", ds.baseURL(), id, v)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	if l := len(o.Nodes); l != 1 {
+		return nil, fmt.Errorf("wrong number of nodes, expected 1, got %v", l)
+	}
+
+	return o.Nodes[0], nil
+}
+
+// NodeHistory returns all the versions of the node from the osm rest api.
+func (ds *Datasource) NodeHistory(ctx context.Context, id osm.NodeID) (osm.Nodes, error) {
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/node/%d/history", ds.baseURL(), id)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	return o.Nodes, nil
+}
