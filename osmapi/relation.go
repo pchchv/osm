@@ -56,3 +56,36 @@ func (ds *Datasource) Relations(ctx context.Context, ids []osm.RelationID, opts 
 
 	return o.Relations, nil
 }
+
+// RelationRelations returns all relations a relation is part of.
+// There is no error if the element does not exist.
+func (ds *Datasource) RelationRelations(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (osm.Relations, error) {
+	params, err := featureOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/relation/%d/relations?%s", ds.baseURL(), id, params)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	return o.Relations, nil
+}
+
+// RelationFull returns the relation and its nodes for the latest version the relation.
+func (ds *Datasource) RelationFull(ctx context.Context, id osm.RelationID, opts ...FeatureOption) (*osm.OSM, error) {
+	params, err := featureOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/relation/%d/full?%s", ds.baseURL(), id, params)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	return o, nil
+}
