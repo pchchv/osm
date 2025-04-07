@@ -73,3 +73,22 @@ func (ds *Datasource) WayRelations(ctx context.Context, id osm.WayID, opts ...Fe
 
 	return o.Relations, nil
 }
+
+// Way returns the latest version of the way from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Way(ctx context.Context, id osm.WayID, opts ...FeatureOption) (*osm.Way, error) {
+	return DefaultDatasource.Way(ctx, id, opts...)
+}
+
+// Ways returns the latest version of the ways from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Ways(ctx context.Context, ids []osm.WayID, opts ...FeatureOption) (osm.Ways, error) {
+	return DefaultDatasource.Ways(ctx, ids, opts...)
+}
+
+// WayRelations returns all relations a way is part of.
+// There is no error if the element does not exist.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func WayRelations(ctx context.Context, id osm.WayID, opts ...FeatureOption) (osm.Relations, error) {
+	return DefaultDatasource.WayRelations(ctx, id, opts...)
+}
