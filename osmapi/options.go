@@ -12,6 +12,11 @@ type FeatureOption interface {
 	applyFeature([]string) ([]string, error)
 }
 
+// NotesOption defines a valid option for the osmapi.Notes by bounding box api.
+type NotesOption interface {
+	applyNotes([]string) ([]string, error)
+}
+
 type at struct {
 	t time.Time
 }
