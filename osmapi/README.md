@@ -49,3 +49,13 @@ func NotesSearch(ctx context.Context, query string, opts ...NotesOption) (osm.No
 
 func User(ctx context.Context, id osm.UserID) (*osm.User, error)
 ```
+
+## Rate limiting
+
+It is possible to provide of [`x/time/rate.Limiter`](https://godoc.org/golang.org/x/time/rate#Limiter) to throttle requests to the official api.   
+For example:
+
+```go
+// 10 qps
+osmapi.DefaultDatasource.Limiter = rate.NewLimiter(10, 1)
+```
