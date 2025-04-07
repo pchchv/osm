@@ -134,3 +134,21 @@ func Ways(ctx context.Context, ids []osm.WayID, opts ...FeatureOption) (osm.Ways
 func WayRelations(ctx context.Context, id osm.WayID, opts ...FeatureOption) (osm.Relations, error) {
 	return DefaultDatasource.WayRelations(ctx, id, opts...)
 }
+
+// WayFull returns the way and its nodes for the latest version the way.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func WayFull(ctx context.Context, id osm.WayID, opts ...FeatureOption) (*osm.OSM, error) {
+	return DefaultDatasource.WayFull(ctx, id, opts...)
+}
+
+// WayVersion returns the specific version of the way from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func WayVersion(ctx context.Context, id osm.WayID, v int) (*osm.Way, error) {
+	return DefaultDatasource.WayVersion(ctx, id, v)
+}
+
+// WayHistory returns all the versions of the way from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func WayHistory(ctx context.Context, id osm.WayID) (osm.Ways, error) {
+	return DefaultDatasource.WayHistory(ctx, id)
+}
