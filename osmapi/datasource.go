@@ -6,19 +6,23 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/pchchv/osm"
 )
 
 // BaseURL defines the api host.
 // This can be change to hit a dev server.
 const BaseURL = "http://api.openstreetmap.org/api/0.6"
 
-// DefaultDatasource is the Datasource used by package level convenience functions.
-var DefaultDatasource = &Datasource{
-	BaseURL: BaseURL,
-	Client: &http.Client{
-		Timeout: 6 * time.Minute, // looks like the api server has a 5 min timeout.
-	},
-}
+var (
+	_                 osm.HistoryDatasourcer = &Datasource{}
+	DefaultDatasource                        = &Datasource{ // Datasource used by package level convenience functions
+		BaseURL: BaseURL,
+		Client: &http.Client{
+			Timeout: 6 * time.Minute, // looks like the api server has a 5 min timeout.
+		},
+	}
+)
 
 // RateLimiter waits until the next allowed request.
 // This interface is met by `golang.org/x/time/rate.Limiter`
