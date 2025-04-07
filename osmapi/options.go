@@ -36,6 +36,12 @@ func (o *limit) applyNotes(p []string) ([]string, error) {
 	return append(p, fmt.Sprintf("limit=%d", o.n)), nil
 }
 
+type maxDaysClosed struct{ n int }
+
+func (o *maxDaysClosed) applyNotes(p []string) ([]string, error) {
+	return append(p, fmt.Sprintf("closed=%d", o.n)), nil
+}
+
 // At adds an `at=2006-01-02T15:04:05Z` parameter to the request.
 // The osm.fyi supports requesting features and maps as they were at the given time.
 func At(t time.Time) FeatureOption {
