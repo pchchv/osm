@@ -42,3 +42,21 @@ func (ds *Datasource) getChangeset(ctx context.Context, url string) (*osm.Change
 
 	return css.Changesets[0], nil
 }
+
+// Changeset returns a given changeset from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Changeset(ctx context.Context, id osm.ChangesetID) (*osm.Changeset, error) {
+	return DefaultDatasource.Changeset(ctx, id)
+}
+
+// ChangesetDownload returns the full osmchange for the changeset using the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func ChangesetDownload(ctx context.Context, id osm.ChangesetID) (*osm.Change, error) {
+	return DefaultDatasource.ChangesetDownload(ctx, id)
+}
+
+// ChangesetWithDiscussion returns a changeset and its discussion from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func ChangesetWithDiscussion(ctx context.Context, id osm.ChangesetID) (*osm.Changeset, error) {
+	return DefaultDatasource.ChangesetWithDiscussion(ctx, id)
+}
