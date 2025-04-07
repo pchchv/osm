@@ -74,6 +74,48 @@ func (ds *Datasource) WayRelations(ctx context.Context, id osm.WayID, opts ...Fe
 	return o.Relations, nil
 }
 
+// WayFull returns the way and its nodes for the latest version the way.
+func (ds *Datasource) WayFull(ctx context.Context, id osm.WayID, opts ...FeatureOption) (*osm.OSM, error) {
+	params, err := featureOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/way/%d/full?%s", ds.baseURL(), id, params)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	return o, nil
+}
+
+// WayVersion returns the specific version of the way from the osm rest api.
+func (ds *Datasource) WayVersion(ctx context.Context, id osm.WayID, v int) (*osm.Way, error) {
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/way/%d/%d", ds.baseURL(), id, v)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	if l := len(o.Ways); l != 1 {
+		return nil, fmt.Errorf("wrong number of ways, expected 1, got %v", l)
+	}
+
+	return o.Ways[0], nil
+}
+
+// WayHistory returns all the versions of the way from the osm rest api.
+func (ds *Datasource) WayHistory(ctx context.Context, id osm.WayID) (osm.Ways, error) {
+	o := &osm.OSM{}
+	url := fmt.Sprintf("%s/way/%d/history", ds.baseURL(), id)
+	if err := ds.getFromAPI(ctx, url, &o); err != nil {
+		return nil, err
+	}
+
+	return o.Ways, nil
+}
+
 // Way returns the latest version of the way from the osm rest api.
 // Delegates to the DefaultDatasource and uses its http.Client to make the request.
 func Way(ctx context.Context, id osm.WayID, opts ...FeatureOption) (*osm.Way, error) {
