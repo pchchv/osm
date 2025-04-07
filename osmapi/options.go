@@ -48,6 +48,21 @@ func At(t time.Time) FeatureOption {
 	return &at{t}
 }
 
+// Limit indicates the number of
+// results to return valid values [1,10000].
+// Default is 100.
+func Limit(num int) NotesOption {
+	return &limit{num}
+}
+
+// MaxDaysClosed specifies the number of days a
+// note needs to be closed to no longer be returned.
+// 0 will return only open notes, -1 will return all notes.
+// Default is 7.
+func MaxDaysClosed(num int) NotesOption {
+	return &maxDaysClosed{num}
+}
+
 func featureOptions(opts []FeatureOption) (string, error) {
 	if len(opts) == 0 {
 		return "", nil
