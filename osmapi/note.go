@@ -74,3 +74,24 @@ func (ds *Datasource) NotesSearch(ctx context.Context, query string, opts ...Not
 
 	return o.Notes, nil
 }
+
+// Note returns the note from the osm rest api.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Note(ctx context.Context, id osm.NoteID) (*osm.Note, error) {
+	return DefaultDatasource.Note(ctx, id)
+}
+
+// Notes returns the notes in a bounding box. Can provide options to limit the results
+// or change what it means to be "closed". See the options or osm api v0.6 docs for details.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Notes(ctx context.Context, bounds *osm.Bounds, opts ...NotesOption) (osm.Notes, error) {
+	return DefaultDatasource.Notes(ctx, bounds, opts...)
+}
+
+// NotesSearch returns the notes in a bounding box whose text matches the query.
+// Can provide options to limit the results or change what it means to be "closed".
+// See the options or osm api v0.6 docs for details.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func NotesSearch(ctx context.Context, query string, opts ...NotesOption) (osm.Notes, error) {
+	return DefaultDatasource.NotesSearch(ctx, query, opts...)
+}
