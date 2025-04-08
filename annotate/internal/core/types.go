@@ -7,6 +7,24 @@ import (
 	"github.com/pchchv/osm/annotate/shared"
 )
 
+// Parent holds children,
+// i.e. ways have nodes as children and relations can have nodes,
+// ways and relations as children.
+type Parent interface {
+	ID() osm.FeatureID // used for logging
+	ChangesetID() osm.ChangesetID
+	Version() int
+	Visible() bool
+	Timestamp() time.Time
+	Committed() time.Time
+	// Refs returns normalized information about the children.
+	// Currently this is the feature ids and if it is already annotated.
+	// Note: we auto-annotate all unannotated children if they would have
+	// been filtered out.
+	Refs() (osm.FeatureIDs, []bool)
+	SetChild(idx int, c *shared.Child)
+}
+
 type ChildList []*shared.Child
 
 // VersionBefore finds the last child before a given time.
