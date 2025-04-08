@@ -1,6 +1,7 @@
 package core
 
 import (
+	"testing"
 	"time"
 
 	"github.com/pchchv/osm"
@@ -8,6 +9,19 @@ import (
 )
 
 var _ Parent = &testParent{}
+
+type findVisibleTestCase struct {
+	name      string
+	timestamp time.Time
+	threshold time.Duration
+	index     int
+}
+
+type lastVisibleTestCase struct {
+	name      string
+	timestamp time.Time
+	index     int
+}
 
 type testParent struct {
 	changesetID osm.ChangesetID
@@ -58,4 +72,23 @@ func (t *testParent) SetChild(idx int, c *shared.Child) {
 		t.children = nc
 	}
 	t.children[idx] = c
+}
+
+func checkChildListFindVisible(t *testing.T, id osm.ChangesetID, cl ChildList, cases []findVisibleTestCase) {
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if c := cl.FindVisible(id, tc.timestamp, tc.threshold); c == nil {
+				if tc.index != -1 {
+					t.Errorf("should not be nil, should be %d", tc.index)
+					t.Logf("%+v", tc)
+				}
+			} else if tc.index == -1 {
+				t.Errorf("should be nil, got %v", c.VersionIndex)
+				t.Logf("%+v", tc)
+			} else if idx := c.VersionIndex; idx != tc.index {
+				t.Errorf("should be %d, got %v", tc.index, idx)
+				t.Logf("%+v", tc)
+			}
+		})
+	}
 }
