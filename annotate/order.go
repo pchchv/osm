@@ -57,3 +57,19 @@ func (o *ChildFirstOrdering) Close() {
 	o.done()
 	o.wg.Wait()
 }
+
+// Err returns a non-nil error
+// if something went wrong with search,
+// like a loop, or a datasource error.
+func (o *ChildFirstOrdering) Err() error {
+	if o.err != nil {
+		return o.err
+	}
+
+	return o.ctx.Err()
+}
+
+// RelationID returns the id found by the previous scan.
+func (o *ChildFirstOrdering) RelationID() osm.RelationID {
+	return o.id
+}
