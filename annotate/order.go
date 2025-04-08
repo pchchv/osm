@@ -73,3 +73,51 @@ func (o *ChildFirstOrdering) Err() error {
 func (o *ChildFirstOrdering) RelationID() osm.RelationID {
 	return o.id
 }
+
+func (o *ChildFirstOrdering) walk(id osm.RelationID, path []osm.RelationID) error {
+	if _, ok := o.visited[id]; ok {
+		return nil
+	}
+
+	relations, err := o.ds.RelationHistory(o.ctx, id)
+	if o.ds.NotFound(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	for _, r := range relations {
+		for _, m := range r.Members {
+			if m.Type != osm.TypeRelation {
+				continue
+			}
+
+			mid := osm.RelationID(m.Ref)
+			for _, pid := range path {
+				if pid == mid {
+					// circular relations are allowed
+					// (see https://github.com/openstreetmap/openstreetmap-website/issues/1465#issuecomment-282323187)
+					// since this relation is already being worked out higher up the stack, it's okay to just come back here
+					return nil
+				}
+			}
+
+			if err := o.walk(mid, append(path, mid)); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ctx.Err() != nil {
+		return o.ctx.Err()
+	}
+
+	o.visited[id] = struct{}{}
+	select {
+	case o.out <- id:
+	case <-o.ctx.Done():
+		return o.ctx.Err()
+	}
+
+	return nil
+}
