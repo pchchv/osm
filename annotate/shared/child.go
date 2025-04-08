@@ -75,3 +75,11 @@ func FromRelation(r *osm.Relation) *Child {
 
 	return c
 }
+
+func updateTimestamp(timestamp, committed time.Time) time.Time {
+	if timestamp.Before(osm.CommitInfoStart) || committed.IsZero() {
+		return timestamp
+	}
+
+	return committed
+}
