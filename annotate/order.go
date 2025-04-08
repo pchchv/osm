@@ -31,3 +31,29 @@ type ChildFirstOrdering struct {
 	id             osm.RelationID
 	err            error
 }
+
+// Next locates the next relation id that can be used.
+// Returns false if the context is closed,
+// something went wrong or the full tree has been walked.
+func (o *ChildFirstOrdering) Next() bool {
+	if o.err != nil || o.ctx.Err() != nil {
+		return false
+	}
+
+	select {
+	case id := <-o.out:
+		if id == 0 {
+			return false
+		}
+		o.id = id
+		return true
+	case <-o.ctx.Done():
+		return false
+	}
+}
+
+// Close terminates the scanning process before all ids have been walked.
+func (o *ChildFirstOrdering) Close() {
+	o.done()
+	o.wg.Wait()
+}
