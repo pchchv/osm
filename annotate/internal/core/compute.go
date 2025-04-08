@@ -5,3 +5,5 @@ type childLoc struct {
 	Parent int
 	Index  int
 }
+
+type childLocs []childLoc
