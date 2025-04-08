@@ -76,6 +76,18 @@ func FromRelation(r *osm.Relation) *Child {
 	return c
 }
 
+// Update generates an update from this child.
+func (c *Child) Update() osm.Update {
+	return osm.Update{
+		Version:     c.Version,
+		Timestamp:   updateTimestamp(c.Timestamp, c.Committed),
+		ChangesetID: c.ChangesetID,
+		Lat:         c.Lat,
+		Lon:         c.Lon,
+		Reverse:     c.ReverseOfPrevious,
+	}
+}
+
 func updateTimestamp(timestamp, committed time.Time) time.Time {
 	if timestamp.Before(osm.CommitInfoStart) || committed.IsZero() {
 		return timestamp
