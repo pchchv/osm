@@ -7,3 +7,18 @@ type childLoc struct {
 }
 
 type childLocs []childLoc
+
+func (locs childLocs) GroupByParent() (result []childLocs) {
+	for len(locs) > 0 {
+		var end int
+		p := locs[0].Parent
+		for end < len(locs) && locs[end].Parent == p {
+			end++
+		}
+
+		result = append(result, locs[:end])
+		locs = locs[end:]
+	}
+
+	return result
+}
