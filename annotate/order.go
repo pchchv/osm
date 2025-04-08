@@ -32,6 +32,39 @@ type ChildFirstOrdering struct {
 	err            error
 }
 
+// NewChildFirstOrdering creates a new ordering object.
+// It is used to provided a child before parent ordering for relations.
+// This order must be used when inserting+annotating relations into the datastore.
+func NewChildFirstOrdering(ctx context.Context, ids []osm.RelationID, ds RelationHistoryDatasourcer) *ChildFirstOrdering {
+	ctx, done := context.WithCancel(ctx)
+	o := &ChildFirstOrdering{
+		ctx:     ctx,
+		done:    done,
+		ds:      ds,
+		visited: make(map[osm.RelationID]struct{}, len(ids)),
+		out:     make(chan osm.RelationID),
+	}
+
+	o.wg.Add(1)
+	go func() {
+		defer o.wg.Done()
+		defer close(o.out)
+
+		path := make([]osm.RelationID, 0, 100)
+		for i, id := range ids {
+			err := o.walk(id, path)
+			if err != nil {
+				o.err = err
+				return
+			}
+
+			o.CompletedIndex = i
+		}
+	}()
+
+	return o
+}
+
 // Next locates the next relation id that can be used.
 // Returns false if the context is closed,
 // something went wrong or the full tree has been walked.
