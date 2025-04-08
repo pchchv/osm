@@ -129,3 +129,11 @@ func timeThreshold(c *shared.Child, esp time.Duration) time.Time {
 
 	return c.Committed
 }
+
+func timeThresholdParent(p Parent, esp time.Duration) time.Time {
+	if p.Committed().Before(osm.CommitInfoStart) {
+		return p.Timestamp().Add(esp)
+	}
+
+	return p.Committed()
+}
