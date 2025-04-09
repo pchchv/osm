@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"time"
 
 	"github.com/pchchv/osm"
@@ -13,6 +14,13 @@ type Options struct {
 	IgnoreInconsistency   bool
 	IgnoreMissingChildren bool
 	ChildFilter           func(osm.FeatureID) bool
+}
+
+// Datasourcer acts as a datasource,
+// allowing fetching of children as needed.
+type Datasourcer interface {
+	Get(ctx context.Context, id osm.FeatureID) (ChildList, error)
+	NotFound(err error) bool
 }
 
 // childLoc references a location of a child in the parents + children.
