@@ -22,3 +22,15 @@ type parentRelation struct {
 	Relation *osm.Relation
 	ways     map[osm.WayID]*osm.Way
 }
+
+func (r *parentRelation) Version() int {
+	return r.Relation.Version
+}
+
+func (r *parentRelation) ID() osm.FeatureID {
+	return r.Relation.FeatureID()
+}
+
+func (r *parentRelation) ChangesetID() osm.ChangesetID {
+	return r.Relation.ChangesetID
+}
