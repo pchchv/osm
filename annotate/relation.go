@@ -51,3 +51,21 @@ func (r *parentRelation) Committed() time.Time {
 func (r *parentRelation) Visible() bool {
 	return r.Relation.Visible
 }
+
+func (r *parentRelation) SetChild(idx int, child *shared.Child) {
+	if r.Relation.Polygon() && r.ways == nil {
+		r.ways = make(map[osm.WayID]*osm.Way, len(r.Relation.Members))
+	}
+
+	if child == nil {
+		return
+	}
+
+	r.Relation.Members[idx].Version = child.Version
+	r.Relation.Members[idx].ChangesetID = child.ChangesetID
+	r.Relation.Members[idx].Lat = child.Lat
+	r.Relation.Members[idx].Lon = child.Lon
+	if r.ways != nil && child.Way != nil {
+		r.ways[child.Way.ID] = child.Way
+	}
+}
