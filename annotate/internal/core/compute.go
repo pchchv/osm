@@ -1,6 +1,18 @@
 package core
 
-import "github.com/pchchv/osm"
+import (
+	"time"
+
+	"github.com/pchchv/osm"
+)
+
+// Options allow for passing som parameters to the matching process.
+type Options struct {
+	Threshold             time.Duration
+	IgnoreInconsistency   bool
+	IgnoreMissingChildren bool
+	ChildFilter           func(osm.FeatureID) bool
+}
 
 // childLoc references a location of a child in the parents + children.
 type childLoc struct {
