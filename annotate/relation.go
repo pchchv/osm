@@ -15,3 +15,10 @@ type HistoryAsChildrenDatasourcer interface {
 	WayHistoryAsChildren(context.Context, osm.WayID) ([]*shared.Child, error)
 	RelationHistoryAsChildren(context.Context, osm.RelationID) ([]*shared.Child, error)
 }
+
+// parentRelation wraps a osm.Relation into the
+// core.Parent interface so that updates can be computed.
+type parentRelation struct {
+	Relation *osm.Relation
+	ways     map[osm.WayID]*osm.Way
+}
