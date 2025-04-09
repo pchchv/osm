@@ -69,3 +69,14 @@ func (r *parentRelation) SetChild(idx int, child *shared.Child) {
 		r.ways[child.Way.ID] = child.Way
 	}
 }
+
+func (r *parentRelation) Refs() (osm.FeatureIDs, []bool) {
+	ids := make(osm.FeatureIDs, len(r.Relation.Members))
+	annotated := make([]bool, len(r.Relation.Members))
+	for i := range r.Relation.Members {
+		ids[i] = r.Relation.Members[i].FeatureID()
+		annotated[i] = r.Relation.Members[i].Version != 0
+	}
+
+	return ids, annotated
+}
