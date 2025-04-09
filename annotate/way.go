@@ -16,6 +16,13 @@ type NodeHistoryDatasourcer interface {
 	NotFound(error) bool
 }
 
+// NodeHistoryAsChildrenDatasourcer is an advanced data source that
+// returns the needed nodes as children directly.
+type NodeHistoryAsChildrenDatasourcer interface {
+	NodeHistoryDatasourcer
+	NodeHistoryAsChildren(context.Context, osm.NodeID) ([]*shared.Child, error)
+}
+
 // parentWay wraps a osm.Way into the
 // core.Parent interface so that updates can be computed.
 type parentWay struct {
