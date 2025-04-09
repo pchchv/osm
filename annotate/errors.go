@@ -29,3 +29,19 @@ type NoVisibleChildError struct {
 func (e *NoVisibleChildError) Error() string {
 	return fmt.Sprintf("no visible child for %v at %v", e.ID, e.Timestamp)
 }
+
+func mapErrors(err error) error {
+	switch t := err.(type) {
+	case *core.NoHistoryError:
+		return &NoHistoryError{
+			ID: t.ChildID,
+		}
+	case *core.NoVisibleChildError:
+		return &NoVisibleChildError{
+			ID:        t.ChildID,
+			Timestamp: t.Timestamp,
+		}
+	}
+
+	return err
+}
