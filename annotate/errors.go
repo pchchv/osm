@@ -2,6 +2,7 @@ package annotate
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pchchv/osm"
 )
@@ -15,4 +16,16 @@ type NoHistoryError struct {
 // Error returns a pretty string of the error.
 func (e *NoHistoryError) Error() string {
 	return fmt.Sprintf("element history not found for %v", e.ID)
+}
+
+// NoVisibleChildError is returned if there
+// are no visible children for a parent at a given time.
+type NoVisibleChildError struct {
+	ID        osm.FeatureID
+	Timestamp time.Time
+}
+
+// Error returns a pretty string of the error.
+func (e *NoVisibleChildError) Error() string {
+	return fmt.Sprintf("no visible child for %v at %v", e.ID, e.Timestamp)
 }
