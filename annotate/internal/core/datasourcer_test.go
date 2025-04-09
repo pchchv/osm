@@ -7,7 +7,10 @@ import (
 	"github.com/pchchv/osm"
 )
 
-var ErrNotFound             = errors.New("not found")
+var (
+	_           Datasourcer = &TestDS{}
+	ErrNotFound             = errors.New("not found")
+)
 
 // TestDS implements a datasource for testing.
 type TestDS struct {
@@ -36,4 +39,22 @@ func (tds *TestDS) MustGet(id osm.FeatureID) ChildList {
 	}
 
 	return v
+}
+
+// Set sets the element history into the map.
+// The element is deleted if list is nil.
+func (tds *TestDS) Set(id osm.FeatureID, list ChildList) {
+	if tds.data == nil {
+		tds.data = make(map[osm.FeatureID]ChildList)
+	}
+
+	if list == nil {
+		delete(tds.data, id)
+	}
+
+	tds.data[id] = list
+}
+
+func (tds *TestDS) NotFound(err error) bool {
+	return err == ErrNotFound
 }
