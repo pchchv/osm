@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/annotate/shared"
 )
 
 // parentWay wraps a osm.Way into the
@@ -38,4 +39,26 @@ func (w *parentWay) Committed() time.Time {
 
 func (w *parentWay) Visible() bool {
 	return w.Way.Visible
+}
+
+func (w *parentWay) SetChild(idx int, child *shared.Child) {
+	if child == nil {
+		return
+	}
+
+	w.Way.Nodes[idx].Version = child.Version
+	w.Way.Nodes[idx].ChangesetID = child.ChangesetID
+	w.Way.Nodes[idx].Lat = child.Lat
+	w.Way.Nodes[idx].Lon = child.Lon
+}
+
+func (w *parentWay) Refs() (osm.FeatureIDs, []bool) {
+	ids := make(osm.FeatureIDs, len(w.Way.Nodes))
+	annotated := make([]bool, len(w.Way.Nodes))
+	for i := range w.Way.Nodes {
+		ids[i] = w.Way.Nodes[i].FeatureID()
+		annotated[i] = w.Way.Nodes[i].Version != 0
+	}
+
+	return ids, annotated
 }
