@@ -1,11 +1,20 @@
 package annotate
 
 import (
+	"context"
 	"time"
 
 	"github.com/pchchv/osm"
 	"github.com/pchchv/osm/annotate/shared"
 )
+
+var _ NodeHistoryDatasourcer = &osm.HistoryDatasource{}
+
+// NodeHistoryDatasourcer is an more strict interface for when we only need node history.
+type NodeHistoryDatasourcer interface {
+	NodeHistory(context.Context, osm.NodeID) (osm.Nodes, error)
+	NotFound(error) bool
+}
 
 // parentWay wraps a osm.Way into the
 // core.Parent interface so that updates can be computed.
