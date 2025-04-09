@@ -7,3 +7,15 @@ import "github.com/pchchv/osm"
 type parentWay struct {
 	Way *osm.Way
 }
+
+func (w *parentWay) Version() int {
+	return w.Way.Version
+}
+
+func (w *parentWay) ID() osm.FeatureID {
+	return w.Way.FeatureID()
+}
+
+func (w *parentWay) ChangesetID() osm.ChangesetID {
+	return w.Way.ChangesetID
+}
