@@ -2,6 +2,7 @@ package annotate
 
 import (
 	"context"
+	"time"
 
 	"github.com/pchchv/osm"
 	"github.com/pchchv/osm/annotate/shared"
@@ -33,4 +34,20 @@ func (r *parentRelation) ID() osm.FeatureID {
 
 func (r *parentRelation) ChangesetID() osm.ChangesetID {
 	return r.Relation.ChangesetID
+}
+
+func (r *parentRelation) Timestamp() time.Time {
+	return r.Relation.Timestamp
+}
+
+func (r *parentRelation) Committed() time.Time {
+	if r.Relation.Committed == nil {
+		return time.Time{}
+	}
+
+	return *r.Relation.Committed
+}
+
+func (r *parentRelation) Visible() bool {
+	return r.Relation.Visible
 }
