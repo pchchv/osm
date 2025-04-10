@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/annotate/internal/core"
 	"github.com/pchchv/osm/annotate/shared"
 )
 
@@ -15,6 +16,44 @@ type HistoryAsChildrenDatasourcer interface {
 	NodeHistoryAsChildren(context.Context, osm.NodeID) ([]*shared.Child, error)
 	WayHistoryAsChildren(context.Context, osm.WayID) ([]*shared.Child, error)
 	RelationHistoryAsChildren(context.Context, osm.RelationID) ([]*shared.Child, error)
+}
+
+// Relations computes the updates for the given relations
+// and annotate members with stuff like changeset and lon/lat data.
+// The input relations are modified to include this information.
+func Relations(ctx context.Context, relations osm.Relations, datasource osm.HistoryDatasourcer, opts ...Option) error {
+	computeOpts := &core.Options{
+		Threshold: defaultThreshold,
+	}
+	for _, o := range opts {
+		if err := o(computeOpts); err != nil {
+			return err
+		}
+	}
+
+	parents := make([]core.Parent, len(relations))
+	for i, r := range relations {
+		parents[i] = &parentRelation{Relation: r}
+	}
+
+	rds := newRelationDatasourcer(datasource)
+	updatesForParents, err := core.Compute(ctx, parents, rds, computeOpts)
+	if err != nil {
+		return mapErrors(err)
+	}
+
+	for _, p := range parents {
+		r := p.(*parentRelation)
+		if r.Relation.Polygon() {
+			orientation(r.Relation.Members, r.ways, r.Relation.CommittedAt())
+		}
+	}
+
+	for i, updates := range updatesForParents {
+		relations[i].Updates = updates
+	}
+
+	return nil
 }
 
 // parentRelation wraps a osm.Relation into the
