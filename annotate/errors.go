@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/annotate/internal/core"
 )
 
 // NoHistoryError is returned if there
@@ -28,6 +29,19 @@ type NoVisibleChildError struct {
 // Error returns a pretty string of the error.
 func (e *NoVisibleChildError) Error() string {
 	return fmt.Sprintf("no visible child for %v at %v", e.ID, e.Timestamp)
+}
+
+// UnsupportedMemberTypeError is returned if a
+// relation member is not a node, way or relation.
+type UnsupportedMemberTypeError struct {
+	RelationID osm.RelationID
+	MemberType osm.Type
+	Index      int
+}
+
+// Error returns a pretty string of the error.
+func (e *UnsupportedMemberTypeError) Error() string {
+	return fmt.Sprintf("unsupported member type %v for relation %d at %d", e.MemberType, e.RelationID, e.Index)
 }
 
 func mapErrors(err error) error {
