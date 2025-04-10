@@ -7,6 +7,7 @@ import (
 	"github.com/pchchv/geo/planar"
 	"github.com/pchchv/osm"
 	"github.com/pchchv/osm/annotate/internal/core"
+	"github.com/pchchv/osm/annotate/shared"
 )
 
 type wayChildDatasource struct {
@@ -44,4 +45,57 @@ func IsReverse(w1, w2 *osm.Way) bool {
 
 	// not a ring so see if endpoint were flipped
 	return w1.Nodes[0].ID == w2.Nodes[len(w2.Nodes)-1].ID && w2.Nodes[0].ID == w1.Nodes[len(w1.Nodes)-1].ID
+}
+
+func relationsToChildList(relations osm.Relations) core.ChildList {
+	if len(relations) == 0 {
+		return nil
+	}
+
+	list := make(core.ChildList, len(relations))
+	relations.SortByIDVersion()
+	for i, r := range relations {
+		c := shared.FromRelation(r)
+		c.VersionIndex = i
+		list[i] = c
+	}
+
+	return list
+}
+
+func nodesToChildList(nodes osm.Nodes) core.ChildList {
+	if len(nodes) == 0 {
+		return nil
+	}
+
+	list := make(core.ChildList, len(nodes))
+	nodes.SortByIDVersion()
+	for i, n := range nodes {
+		c := shared.FromNode(n)
+		c.VersionIndex = i
+		list[i] = c
+	}
+
+	return list
+}
+
+func waysToChildList(ways osm.Ways) core.ChildList {
+	if len(ways) == 0 {
+		return nil
+	}
+
+	list := make(core.ChildList, len(ways))
+	ways.SortByIDVersion()
+	for i, w := range ways {
+		c := shared.FromWay(w)
+		c.VersionIndex = i
+
+		if i != 0 {
+			c.ReverseOfPrevious = IsReverse(w, ways[i-1])
+		}
+
+		list[i] = c
+	}
+
+	return list
 }
