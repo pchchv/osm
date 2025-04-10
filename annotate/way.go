@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/annotate/internal/core"
 	"github.com/pchchv/osm/annotate/shared"
 )
 
@@ -21,6 +22,37 @@ type NodeHistoryDatasourcer interface {
 type NodeHistoryAsChildrenDatasourcer interface {
 	NodeHistoryDatasourcer
 	NodeHistoryAsChildren(context.Context, osm.NodeID) ([]*shared.Child, error)
+}
+
+// Ways computes the updates for the given ways and annotate the way nodes with changeset and lon/lat data.
+// The input ways are modified to include this information.
+func Ways(ctx context.Context, ways osm.Ways, datasource NodeHistoryDatasourcer, opts ...Option) error {
+	computeOpts := &core.Options{
+		Threshold: defaultThreshold,
+	}
+	for _, o := range opts {
+		if err := o(computeOpts); err != nil {
+			return err
+		}
+	}
+
+	parents := make([]core.Parent, len(ways))
+	for i, w := range ways {
+		parents[i] = &parentWay{Way: w}
+	}
+
+	wds := newWayDatasourcer(datasource)
+	updatesForParents, err := core.Compute(ctx, parents, wds, computeOpts)
+	if err != nil {
+		return mapErrors(err)
+	}
+
+	// fill in updates
+	for i, updates := range updatesForParents {
+		ways[i].Updates = updates
+	}
+
+	return nil
 }
 
 // parentWay wraps a osm.Way into the

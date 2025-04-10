@@ -7,6 +7,8 @@ import (
 	"github.com/pchchv/osm/annotate/internal/core"
 )
 
+const defaultThreshold = 30 * time.Minute
+
 // Option is a parameter that can be used for annotating.
 type Option func(*core.Options) error
 
