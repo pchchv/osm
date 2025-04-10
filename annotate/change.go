@@ -77,3 +77,23 @@ func findPreviousRelation(ctx context.Context, r *osm.Relation, ds osm.HistoryDa
 
 	return relations[loc], nil
 }
+
+func osmCount(o *osm.OSM) int {
+	if o == nil {
+		return 0
+	}
+
+	return len(o.Nodes) + len(o.Ways) + len(o.Relations)
+}
+
+func checkErr(ds osm.HistoryDatasourcer, ignoreMissing bool, err error, id osm.FeatureID) error {
+	if err != nil && ds.NotFound(err) {
+		if ignoreMissing {
+			return nil
+		}
+
+		return &NoVisibleChildError{ID: id}
+	}
+
+	return nil
+}
