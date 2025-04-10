@@ -33,6 +33,14 @@ type relationDatasource struct {
 	osm.HistoryDatasourcer
 }
 
+func newRelationDatasourcer(ds osm.HistoryDatasourcer) core.Datasourcer {
+	if d, ok := ds.(HistoryAsChildrenDatasourcer); ok {
+		return &relationChildDatasource{d}
+	}
+
+	return &relationDatasource{ds}
+}
+
 func (rds *relationDatasource) Get(ctx context.Context, id osm.FeatureID) (core.ChildList, error) {
 	switch id.Type() {
 	case osm.TypeNode:
