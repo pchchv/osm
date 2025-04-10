@@ -10,6 +10,40 @@ import (
 	"github.com/pchchv/osm/annotate/shared"
 )
 
+type relationDatasource struct {
+	osm.HistoryDatasourcer
+}
+
+func (rds *relationDatasource) Get(ctx context.Context, id osm.FeatureID) (core.ChildList, error) {
+	switch id.Type() {
+	case osm.TypeNode:
+		nodes, err := rds.NodeHistory(ctx, id.NodeID())
+		if err != nil {
+			return nil, err
+		}
+
+		return nodesToChildList(nodes), nil
+	case osm.TypeWay:
+		ways, err := rds.WayHistory(ctx, id.WayID())
+		if err != nil {
+			return nil, err
+		}
+
+		return waysToChildList(ways), nil
+	case osm.TypeRelation:
+		relations, err := rds.RelationHistory(ctx, id.RelationID())
+		if err != nil {
+			return nil, err
+		}
+
+		return relationsToChildList(relations), nil
+	}
+
+	return nil, &UnsupportedMemberTypeError{
+		MemberType: id.Type(),
+	}
+}
+
 type wayChildDatasource struct {
 	NodeHistoryAsChildrenDatasourcer
 }
