@@ -97,3 +97,85 @@ func checkErr(ds osm.HistoryDatasourcer, ignoreMissing bool, err error, id osm.F
 
 	return nil
 }
+
+func addUpdate(ctx context.Context, actions []osm.Action, o *osm.OSM, actionType osm.ActionType, ds osm.HistoryDatasourcer, ignoreMissing bool) ([]osm.Action, error) {
+	if o == nil {
+		return actions, nil
+	}
+
+	currentVisible := true
+	if actionType == osm.ActionDelete {
+		currentVisible = false
+	}
+
+	for _, n := range o.Nodes {
+		old, err := findPreviousNode(ctx, n, ds, ignoreMissing)
+		if e := checkErr(ds, ignoreMissing, err, n.FeatureID()); e != nil {
+			return nil, e
+		}
+
+		if old == nil {
+			n.Visible = true
+			actions = append(actions, osm.Action{
+				Type: osm.ActionCreate,
+				OSM:  &osm.OSM{Nodes: osm.Nodes{n}},
+			})
+			continue
+		}
+
+		n.Visible = currentVisible
+		actions = append(actions, osm.Action{
+			Type: actionType,
+			Old:  &osm.OSM{Nodes: osm.Nodes{old}},
+			New:  &osm.OSM{Nodes: osm.Nodes{n}},
+		})
+	}
+
+	for _, w := range o.Ways {
+		old, err := findPreviousWay(ctx, w, ds, ignoreMissing)
+		if e := checkErr(ds, ignoreMissing, err, w.FeatureID()); e != nil {
+			return nil, e
+		}
+
+		if old == nil {
+			w.Visible = true
+			actions = append(actions, osm.Action{
+				Type: osm.ActionCreate,
+				OSM:  &osm.OSM{Ways: osm.Ways{w}},
+			})
+			continue
+		}
+
+		w.Visible = currentVisible
+		actions = append(actions, osm.Action{
+			Type: actionType,
+			Old:  &osm.OSM{Ways: osm.Ways{old}},
+			New:  &osm.OSM{Ways: osm.Ways{w}},
+		})
+	}
+
+	for _, r := range o.Relations {
+		old, err := findPreviousRelation(ctx, r, ds, ignoreMissing)
+		if e := checkErr(ds, ignoreMissing, err, r.FeatureID()); e != nil {
+			return nil, e
+		}
+
+		if old == nil {
+			r.Visible = true
+			actions = append(actions, osm.Action{
+				Type: osm.ActionCreate,
+				OSM:  &osm.OSM{Relations: osm.Relations{r}},
+			})
+			continue
+		}
+
+		r.Visible = currentVisible
+		actions = append(actions, osm.Action{
+			Type: actionType,
+			Old:  &osm.OSM{Relations: osm.Relations{old}},
+			New:  &osm.OSM{Relations: osm.Relations{r}},
+		})
+	}
+
+	return actions, nil
+}
