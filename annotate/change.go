@@ -4,7 +4,64 @@ import (
 	"context"
 
 	"github.com/pchchv/osm"
+	"github.com/pchchv/osm/annotate/internal/core"
 )
+
+// Change annotates a change into a diff.
+// It uses the HistoryDatasourcer to figure out the previous version of all the elements and build the diff.
+// The IgnoreMissingChildren option can be used to handle missing histories.
+// In this case the change will be considered a "new" action type.
+func Change(ctx context.Context, change *osm.Change, ds osm.HistoryDatasourcer, opts ...Option) (*osm.Diff, error) {
+	computeOpts := &core.Options{}
+	for _, o := range opts {
+		if err := o(computeOpts); err != nil {
+			return nil, err
+		}
+	}
+
+	ignoreMissing := computeOpts.IgnoreMissingChildren
+	actions := make([]osm.Action, 0, osmCount(change.Create)+osmCount(change.Modify)+osmCount(change.Delete))
+	// creates are all "new" things
+	if o := change.Create; o != nil {
+		for _, n := range o.Nodes {
+			n.Visible = true
+			actions = append(actions, osm.Action{
+				Type: osm.ActionCreate,
+				OSM:  &osm.OSM{Nodes: osm.Nodes{n}},
+			})
+		}
+
+		for _, w := range o.Ways {
+			w.Visible = true
+			actions = append(actions, osm.Action{
+				Type: osm.ActionCreate,
+				OSM:  &osm.OSM{Ways: osm.Ways{w}},
+			})
+		}
+
+		for _, r := range o.Relations {
+			r.Visible = true
+			actions = append(actions, osm.Action{
+				Type: osm.ActionCreate,
+				OSM:  &osm.OSM{Relations: osm.Relations{r}},
+			})
+		}
+	}
+
+	// modify
+	actions, err := addUpdate(ctx, actions, change.Modify, osm.ActionModify, ds, ignoreMissing)
+	if err != nil {
+		return nil, err
+	}
+
+	// delete
+	actions, err = addUpdate(ctx, actions, change.Delete, osm.ActionDelete, ds, ignoreMissing)
+	if err != nil {
+		return nil, err
+	}
+
+	return &osm.Diff{Actions: actions}, nil
+}
 
 func findPreviousNode(ctx context.Context, n *osm.Node, ds osm.HistoryDatasourcer, ignoreMissing bool) (*osm.Node, error) {
 	nodes, err := ds.NodeHistory(ctx, n.ID)
