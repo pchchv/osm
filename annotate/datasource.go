@@ -26,6 +26,27 @@ type wayDatasource struct {
 	NodeHistoryDatasourcer
 }
 
+func newWayDatasourcer(ds NodeHistoryDatasourcer) core.Datasourcer {
+	if d, ok := ds.(NodeHistoryAsChildrenDatasourcer); ok {
+		return &wayChildDatasource{d}
+	}
+
+	return &wayDatasource{ds}
+}
+
+func (wds *wayDatasource) Get(ctx context.Context, id osm.FeatureID) (core.ChildList, error) {
+	if id.Type() != osm.TypeNode {
+		panic("only node types supported")
+	}
+
+	nodes, err := wds.NodeHistory(ctx, id.NodeID())
+	if err != nil {
+		return nil, err
+	}
+
+	return nodesToChildList(nodes), nil
+}
+
 // IsReverse checks if the update to this way was “reversal”.
 // This is very tricky to answer in the general case,
 // but easier for a minor update to a relation.
