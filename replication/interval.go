@@ -54,3 +54,7 @@ func (n HourSeqNum) Uint64() uint64 {
 }
 
 func (n HourSeqNum) private() {}
+
+// DaySeqNum indicates the sequence of the daily diff replication found here:
+// http://planet.osm.org/replication/day
+type DaySeqNum uint64
