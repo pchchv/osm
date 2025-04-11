@@ -20,7 +20,7 @@ func TestRelation(t *testing.T) {
 	}
 
 	for _, id := range ids {
-		o := loadTestdata(t, fmt.Sprintf("testdata/relation_%d.osm", id))
+		o := loadTestdata(t, fmt.Sprintf("../testdata/relation_%d.osm", id))
 		ds := o.HistoryDatasource()
 		for id, ways := range ds.Ways {
 			if err := Ways(context.Background(), ways, ds); err != nil {
@@ -33,9 +33,9 @@ func TestRelation(t *testing.T) {
 			t.Fatalf("compute error for %d: %v", id, err)
 		}
 
-		expected := loadTestdata(t, fmt.Sprintf("testdata/relation_%d_expected.osm", id))
+		expected := loadTestdata(t, fmt.Sprintf("../testdata/relation_%d_expected.osm", id))
 		if !reflect.DeepEqual(relations, expected.Relations) {
-			filename := fmt.Sprintf("testdata/relation_%d_got.osm", id)
+			filename := fmt.Sprintf("../testdata/relation_%d_got.osm", id)
 			t.Errorf("expected relations not equal, file saved to %s", filename)
 
 			data, _ := xml.MarshalIndent(&osm.OSM{Relations: relations}, "", " ")
@@ -372,7 +372,7 @@ func TestRelation_selfCircular(t *testing.T) {
 
 func BenchmarkRelations(b *testing.B) {
 	id := osm.RelationID(2714790)
-	filename := fmt.Sprintf("testdata/relation_%d.osm", id)
+	filename := fmt.Sprintf("../testdata/relation_%d.osm", id)
 
 	o := loadTestdata(b, filename)
 	ds := o.HistoryDatasource()

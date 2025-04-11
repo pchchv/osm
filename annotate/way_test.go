@@ -17,18 +17,18 @@ func TestWays(t *testing.T) {
 		230391153,
 	}
 	for _, id := range ids {
-		o := loadTestdata(t, fmt.Sprintf("testdata/way_%d.osm", id))
+		o := loadTestdata(t, fmt.Sprintf("../testdata/way_%d.osm", id))
 		ds := (&osm.OSM{Nodes: o.Nodes}).HistoryDatasource()
 		if err := Ways(context.Background(), o.Ways, ds); err != nil {
 			t.Fatalf("compute error: %e", err)
 		}
 
-		filename := fmt.Sprintf("testdata/way_%d_expected.osm", id)
+		filename := fmt.Sprintf("../testdata/way_%d_expected.osm", id)
 		expected := loadTestdata(t, filename)
 		if !reflect.DeepEqual(o.Ways, expected.Ways) {
 			t.Errorf("expected way for id %d not equal", id)
 
-			filename := fmt.Sprintf("testdata/way_%d_got.osm", id)
+			filename := fmt.Sprintf("../testdata/way_%d_got.osm", id)
 			t.Errorf("expected way not equal, file saved to %s", filename)
 
 			data, _ := xml.MarshalIndent(&osm.OSM{Ways: o.Ways}, "", " ")
@@ -91,7 +91,7 @@ func TestWays_childFilter(t *testing.T) {
 }
 
 func BenchmarkWay(b *testing.B) {
-	o := loadTestdata(b, "testdata/way_6394949.osm")
+	o := loadTestdata(b, "../testdata/way_6394949.osm")
 	ds := (&osm.OSM{Nodes: o.Nodes}).HistoryDatasource()
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -104,7 +104,7 @@ func BenchmarkWay(b *testing.B) {
 }
 
 func BenchmarkWays(b *testing.B) {
-	o := loadTestdata(b, "testdata/relation_2714790.osm")
+	o := loadTestdata(b, "../testdata/relation_2714790.osm")
 	ds := o.HistoryDatasource()
 	b.ReportAllocs()
 	b.ResetTimer()
