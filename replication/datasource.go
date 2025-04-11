@@ -59,3 +59,15 @@ type UnexpectedStatusCodeError struct {
 func (e *UnexpectedStatusCodeError) Error() string {
 	return fmt.Sprintf("replication: unexpected status code of %d for url %s", e.Code, e.URL)
 }
+
+// NotFound will return try if the error from one of the
+// methods was due to the file not found on the remote host.
+func NotFound(err error) bool {
+	if err != nil {
+		if e, ok := err.(*UnexpectedStatusCodeError); ok {
+			return e.Code == http.StatusNotFound
+		}
+	}
+
+	return false
+}
