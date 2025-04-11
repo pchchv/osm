@@ -1,6 +1,7 @@
 package replication
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -46,4 +47,15 @@ func (ds Datasource) baseURL() string {
 	}
 
 	return BaseURL
+}
+
+// UnexpectedStatusCodeError is return for a non 200 or 404 status code.
+type UnexpectedStatusCodeError struct {
+	Code int
+	URL  string
+}
+
+// Error returns an error message with some information.
+func (e *UnexpectedStatusCodeError) Error() string {
+	return fmt.Sprintf("replication: unexpected status code of %d for url %s", e.Code, e.URL)
 }
