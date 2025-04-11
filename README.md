@@ -122,4 +122,5 @@ CGO can be disabled at build time using the `CGO_ENABLED` ENV variable. For exam
 - [`osmapi`](osmapi) - supports all the v0.6 read/data endpoints
 - [`osmpbf`](osmpbf) - stream processing of `*.osm.pbf` files
 - [`osmxml`](osmxml) - stream processing of `*.osm` xml files
+- [`annotate`](annotate) - adds lon/lat, version, changeset and orientation data to way and relation members
 - [`osmgeojson`](osmgeojson) - converts OSM data to GeoJSON
