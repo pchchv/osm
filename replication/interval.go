@@ -58,3 +58,20 @@ func (n HourSeqNum) private() {}
 // DaySeqNum indicates the sequence of the daily diff replication found here:
 // http://planet.osm.org/replication/day
 type DaySeqNum uint64
+
+// String returns 'day/%d'.
+func (n DaySeqNum) String() string {
+	return fmt.Sprintf("day/%d", n)
+}
+
+// Dir returns the directory of this data on planet osm.
+func (n DaySeqNum) Dir() string {
+	return "day"
+}
+
+// Uint64 returns the seq num as a uint64 type.
+func (n DaySeqNum) Uint64() uint64 {
+	return uint64(n)
+}
+
+func (n DaySeqNum) private() {}
