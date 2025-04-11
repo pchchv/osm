@@ -33,3 +33,7 @@ func (n MinuteSeqNum) Uint64() uint64 {
 }
 
 func (n MinuteSeqNum) private() {}
+
+// HourSeqNum indicates the sequence of the hourly diff replication found here:
+// http://planet.osm.org/replication/hour
+type HourSeqNum uint64
