@@ -1,7 +1,9 @@
 package replication
 
 import (
+	"bytes"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -118,4 +120,44 @@ func (ds *Datasource) baseSeqURL(sn SeqNum) string {
 
 func (ds *Datasource) changeURL(n SeqNum) string {
 	return ds.baseSeqURL(n) + ".osc.gz"
+}
+
+// Example:
+// ---
+// #Sat Jul 16 06:14:03 UTC 2016
+// txnMaxQueried=836439235
+// sequenceNumber=2010580
+// timestamp=2016-07-16T06\:14\:02Z
+// txnReadyList=
+// txnMax=836439235
+// txnActiveList=836439008
+func decodeIntervalState(data []byte) (state *State, err error) {
+	state = &State{}
+	for _, l := range bytes.Split(data, []byte("\n")) {
+		parts := bytes.Split(l, []byte("="))
+		if bytes.Equal(parts[0], []byte("sequenceNumber")) {
+			var n int
+			n, err = strconv.Atoi(string(bytes.TrimSpace(parts[1])))
+			if err != nil {
+				return nil, err
+			}
+
+			state.SeqNum = uint64(n)
+		} else if bytes.Equal(parts[0], []byte("txnMax")) {
+			if state.TxnMax, err = strconv.Atoi(string(bytes.TrimSpace(parts[1]))); err != nil {
+				return nil, err
+			}
+		} else if bytes.Equal(parts[0], []byte("txnMaxQueried")) {
+			if state.TxnMaxQueried, err = strconv.Atoi(string(bytes.TrimSpace(parts[1]))); err != nil {
+				return nil, err
+			}
+		} else if bytes.Equal(parts[0], []byte("timestamp")) {
+			timeString := string(bytes.TrimSpace(parts[1]))
+			if state.Timestamp, err = decodeTime(timeString); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return state, nil
 }
