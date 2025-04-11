@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// BaseURL defines the default planet server to hit.
+const BaseURL = "https://planet.osm.org"
+
 // DefaultDatasource is the Datasource used by the package level convenience functions.
 var DefaultDatasource = &Datasource{
 	Client: &http.Client{
@@ -23,4 +26,24 @@ func NewDatasource(client *http.Client) *Datasource {
 	return &Datasource{
 		Client: client,
 	}
+}
+
+func (ds Datasource) client() *http.Client {
+	if ds.Client != nil {
+		return ds.Client
+	}
+
+	if DefaultDatasource.Client != nil {
+		return DefaultDatasource.Client
+	}
+
+	return http.DefaultClient
+}
+
+func (ds Datasource) baseURL() string {
+	if ds.BaseURL != "" {
+		return ds.BaseURL
+	}
+
+	return BaseURL
 }
