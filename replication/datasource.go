@@ -9,12 +9,20 @@ import (
 // BaseURL defines the default planet server to hit.
 const BaseURL = "https://planet.osm.org"
 
-// DefaultDatasource is the Datasource used by the package level convenience functions.
-var DefaultDatasource = &Datasource{
-	Client: &http.Client{
-		Timeout: 30 * time.Minute,
-	},
-}
+var (
+	// DefaultDatasource is the Datasource used by the package level convenience functions.
+	DefaultDatasource = &Datasource{
+		Client: &http.Client{
+			Timeout: 30 * time.Minute,
+		},
+	}
+	// timeFormats contains the set of different formats we've see the time in.
+	timeFormats = []string{
+		"2006-01-02 15:04:05.999999999 Z",
+		"2006-01-02 15:04:05.999999999 +00:00",
+		"2006-01-02T15\\:04\\:05Z",
+	}
+)
 
 // Datasource defines context around replication data requests.
 type Datasource struct {
@@ -70,4 +78,14 @@ func NotFound(err error) bool {
 	}
 
 	return false
+}
+
+func decodeTime(s string) (t time.Time, err error) {
+	for _, format := range timeFormats {
+		if t, err = time.Parse(format, s); err == nil {
+			return t, nil
+		}
+	}
+
+	return t, err
 }
