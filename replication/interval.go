@@ -9,3 +9,7 @@ type State struct {
 	TxnMax        int       `json:"txn_max,omitempty"`
 	TxnMaxQueried int       `json:"txn_max_queries,omitempty"`
 }
+
+// MinuteSeqNum indicates the sequence of the minutely diff replication found here:
+// http://planet.osm.org/replication/minute
+type MinuteSeqNum uint64
