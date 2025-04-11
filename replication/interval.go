@@ -37,3 +37,20 @@ func (n MinuteSeqNum) private() {}
 // HourSeqNum indicates the sequence of the hourly diff replication found here:
 // http://planet.osm.org/replication/hour
 type HourSeqNum uint64
+
+// String returns 'hour/%d'.
+func (n HourSeqNum) String() string {
+	return fmt.Sprintf("hour/%d", n)
+}
+
+// Dir returns the directory of this data on planet osm.
+func (n HourSeqNum) Dir() string {
+	return "hour"
+}
+
+// Uint64 returns the seq num as a uint64 type.
+func (n HourSeqNum) Uint64() uint64 {
+	return uint64(n)
+}
+
+func (n HourSeqNum) private() {}
