@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+var (
+	_        = SeqNum(MinuteSeqNum(0)).private // for linters
+	_ SeqNum = MinuteSeqNum(0)
+	_ SeqNum = HourSeqNum(0)
+	_ SeqNum = DaySeqNum(0)
+)
+
 // State returns information about the current replication state.
 type State struct {
 	SeqNum        uint64    `json:"seq_num"`
@@ -75,3 +82,14 @@ func (n DaySeqNum) Uint64() uint64 {
 }
 
 func (n DaySeqNum) private() {}
+
+// SeqNum is an interface type that includes MinuteSeqNum,
+// HourSeqNum and DaySeqNum.
+// This is an experiment to implement a sum type,
+// a type that can be one of several things only.
+type SeqNum interface {
+	fmt.Stringer
+	Dir() string
+	Uint64() uint64
+	private()
+}
