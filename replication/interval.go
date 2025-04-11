@@ -105,3 +105,17 @@ type SeqNum interface {
 	Uint64() uint64
 	private()
 }
+
+func (ds *Datasource) baseSeqURL(sn SeqNum) string {
+	n := sn.Uint64()
+	return fmt.Sprintf("%s/replication/%s/%03d/%03d/%03d",
+		ds.baseURL(),
+		sn.Dir(),
+		n/1000000,
+		(n%1000000)/1000,
+		n%1000)
+}
+
+func (ds *Datasource) changeURL(n SeqNum) string {
+	return ds.baseSeqURL(n) + ".osc.gz"
+}
