@@ -5,6 +5,18 @@ import (
 	"time"
 )
 
+const (
+	// MinuteSeqStart is the beginning of valid minutely sequence data.
+	// The few before look to be way more than a minute.
+	// A quick looks says about 75, 57, 17 for 1, 2, 3 respectively.
+	MinuteSeqStart = MinuteSeqNum(4)
+	// HourSeqStart is the beginning of valid hour sequence data.
+	// Without deep inspection it looks like 1-10 are from July 2013.
+	HourSeqStart = HourSeqNum(11)
+	// DaySeqStart is the beginning of valid day sequence data.
+	DaySeqStart = DaySeqNum(1)
+)
+
 var (
 	_        = SeqNum(MinuteSeqNum(0)).private // for linters
 	_ SeqNum = MinuteSeqNum(0)
