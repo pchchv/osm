@@ -96,6 +96,32 @@ func (ds *Datasource) MinuteStateAt(ctx context.Context, timestamp time.Time) (M
 	return MinuteSeqNum(state.SeqNum), state, nil
 }
 
+// ChangesetStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+func (ds *Datasource) ChangesetStateAt(ctx context.Context, timestamp time.Time) (ChangesetSeqNum, *State, error) {
+	s := &stater{
+		Min: minDay,
+		Current: func(ctx context.Context) (*State, error) {
+			_, s, err := ds.CurrentChangesetState(ctx)
+			return s, err
+		},
+		State: func(ctx context.Context, n uint64) (*State, error) {
+			return ds.ChangesetState(ctx, ChangesetSeqNum(n))
+		},
+	}
+	state, err := searchTimestamp(ctx, s, timestamp)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return ChangesetSeqNum(state.SeqNum), state, nil
+}
+
 // DayStateAt returns the replication state/sequence number that contains data for the given timestamp.
 // This would be the first replication state written after the timestamp.
 // If the timestamp is after all current replication state the most recent will be returned.
@@ -130,6 +156,18 @@ func HourStateAt(ctx context.Context, timestamp time.Time) (HourSeqNum, *State, 
 // Delegates to the DefaultDatasource and uses its http.Client to make the request.
 func MinuteStateAt(ctx context.Context, timestamp time.Time) (MinuteSeqNum, *State, error) {
 	return DefaultDatasource.MinuteStateAt(ctx, timestamp)
+}
+
+// ChangesetStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func ChangesetStateAt(ctx context.Context, timestamp time.Time) (ChangesetSeqNum, *State, error) {
+	return DefaultDatasource.ChangesetStateAt(ctx, timestamp)
 }
 
 func findBound(ctx context.Context, s *stater, upper *State, timestamp time.Time) (*State, *State, error) {
