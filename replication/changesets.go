@@ -139,6 +139,25 @@ func (ds *Datasource) changesetReader(ctx context.Context, n ChangesetSeqNum) (i
 	return resp.Body, nil
 }
 
+// ChangesetState returns the state for the given changeset replication.
+// There are no state files before 2007990. In that case a 404 error is returned.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func ChangesetState(ctx context.Context, n ChangesetSeqNum) (*State, error) {
+	return DefaultDatasource.ChangesetState(ctx, n)
+}
+
+// CurrentChangesetState returns the current state of the changeset replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func CurrentChangesetState(ctx context.Context) (ChangesetSeqNum, *State, error) {
+	return DefaultDatasource.CurrentChangesetState(ctx)
+}
+
+// Changesets returns the complete list of changesets for the given replication sequence.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Changesets(ctx context.Context, n ChangesetSeqNum) (osm.Changesets, error) {
+	return DefaultDatasource.Changesets(ctx, n)
+}
+
 func changesetDecoder(ctx context.Context, r io.Reader) (osm.Changesets, error) {
 	gzReader, err := gzip.NewReader(r)
 	if err != nil {
