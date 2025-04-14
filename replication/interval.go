@@ -290,6 +290,24 @@ func MinuteState(ctx context.Context, n MinuteSeqNum) (*State, error) {
 	return DefaultDatasource.MinuteState(ctx, n)
 }
 
+// Day returns the change diff for a given day.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Day(ctx context.Context, n DaySeqNum) (*osm.Change, error) {
+	return DefaultDatasource.Day(ctx, n)
+}
+
+// Hour returns the change diff for a given hour.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Hour(ctx context.Context, n HourSeqNum) (*osm.Change, error) {
+	return DefaultDatasource.Hour(ctx, n)
+}
+
+// Minute returns the change diff for a given minute.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func Minute(ctx context.Context, n MinuteSeqNum) (*osm.Change, error) {
+	return DefaultDatasource.Minute(ctx, n)
+}
+
 // Example:
 // ---
 // #Sat Jul 16 06:14:03 UTC 2016
