@@ -2,9 +2,16 @@ package replication
 
 import (
 	"bytes"
+	"compress/gzip"
+	"context"
+	"encoding/xml"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/pchchv/osm"
 )
 
 const (
@@ -120,6 +127,71 @@ func (ds *Datasource) baseSeqURL(sn SeqNum) string {
 
 func (ds *Datasource) changeURL(n SeqNum) string {
 	return ds.baseSeqURL(n) + ".osc.gz"
+}
+
+func (ds *Datasource) fetchState(ctx context.Context, n SeqNum) (*State, error) {
+	var url string
+	if n.Uint64() != 0 {
+		url = ds.baseSeqURL(n) + ".state.txt"
+	} else {
+		url = fmt.Sprintf("%s/replication/%s/state.txt", ds.baseURL(), n.Dir())
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := ds.client().Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		return nil, &UnexpectedStatusCodeError{
+			Code: resp.StatusCode,
+			URL:  url,
+		}
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return decodeIntervalState(data)
+}
+
+func (ds *Datasource) fetchIntervalData(ctx context.Context, url string) (*osm.Change, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := ds.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, &UnexpectedStatusCodeError{
+			Code: resp.StatusCode,
+			URL:  url,
+		}
+	}
+
+	gzReader, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer gzReader.Close()
+
+	change := &osm.Change{}
+	err = xml.NewDecoder(gzReader).Decode(change)
+	return change, err
 }
 
 // Example:
