@@ -124,3 +124,4 @@ CGO can be disabled at build time using the `CGO_ENABLED` ENV variable. For exam
 - [`osmxml`](osmxml) - stream processing of `*.osm` xml files
 - [`annotate`](annotate) - adds lon/lat, version, changeset and orientation data to way and relation members
 - [`osmgeojson`](osmgeojson) - converts OSM data to GeoJSON
+- [`replication`](replication) - fetch replication state and change files
