@@ -115,6 +115,21 @@ type SeqNum interface {
 	private()
 }
 
+// CurrentDayState returns the current state of the daily replication.
+func (ds *Datasource) CurrentDayState(ctx context.Context) (DaySeqNum, *State, error) {
+	s, err := ds.DayState(ctx, 0)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return DaySeqNum(s.SeqNum), s, err
+}
+
+// DayState returns the state of the given daily replication.
+func (ds *Datasource) DayState(ctx context.Context, n DaySeqNum) (*State, error) {
+	return ds.fetchState(ctx, n)
+}
+
 func (ds *Datasource) baseSeqURL(sn SeqNum) string {
 	n := sn.Uint64()
 	return fmt.Sprintf("%s/replication/%s/%03d/%03d/%03d",
