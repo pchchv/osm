@@ -96,6 +96,42 @@ func (ds *Datasource) MinuteStateAt(ctx context.Context, timestamp time.Time) (M
 	return MinuteSeqNum(state.SeqNum), state, nil
 }
 
+// DayStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func DayStateAt(ctx context.Context, timestamp time.Time) (DaySeqNum, *State, error) {
+	return DefaultDatasource.DayStateAt(ctx, timestamp)
+}
+
+// HourStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func HourStateAt(ctx context.Context, timestamp time.Time) (HourSeqNum, *State, error) {
+	return DefaultDatasource.HourStateAt(ctx, timestamp)
+}
+
+// MinuteStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func MinuteStateAt(ctx context.Context, timestamp time.Time) (MinuteSeqNum, *State, error) {
+	return DefaultDatasource.MinuteStateAt(ctx, timestamp)
+}
+
 func findBound(ctx context.Context, s *stater, upper *State, timestamp time.Time) (*State, *State, error) {
 	var lowerID uint64 = 1
 	var lower *State
