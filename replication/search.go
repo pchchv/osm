@@ -103,3 +103,38 @@ func findInRange(ctx context.Context, s *stater, lower, upper *State, timestamp 
 	// timestamp is now between lower and upper, return the upper
 	return upper, nil
 }
+
+func searchTimestamp(ctx context.Context, s *stater, timestamp time.Time) (*State, error) {
+	// get the current timestamp from the server
+	upper, err := s.Current(ctx)
+	if NotFound(err) {
+		return nil, err // current state not found?
+	} else if err != nil {
+		return nil, err
+	}
+
+	if timestamp.After(upper.Timestamp) {
+		return upper, nil // given time is in the future or something
+	}
+
+	lower, err := s.State(ctx, s.Min)
+	if err != nil && !NotFound(err) {
+		return nil, err
+	}
+
+	if lower == nil {
+		// now is needed to find a lower bound state manually
+		// this can have edge cases if there are missing sequence numbers
+		var err error
+		lower, upper, err = findBound(ctx, s, upper, timestamp)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if lower.SeqNum+1 >= upper.SeqNum {
+		return lower, nil // edge case if there are only one or two sequence numbers
+	}
+
+	return findInRange(ctx, s, lower, upper, timestamp)
+}
