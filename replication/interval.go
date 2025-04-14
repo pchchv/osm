@@ -239,6 +239,42 @@ func (ds *Datasource) fetchIntervalData(ctx context.Context, url string) (*osm.C
 	return change, err
 }
 
+// CurrentDayState returns the current state of the daily replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func CurrentDayState(ctx context.Context) (DaySeqNum, *State, error) {
+	return DefaultDatasource.CurrentDayState(ctx)
+}
+
+// DayState returns the state of the given daily replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func DayState(ctx context.Context, n DaySeqNum) (*State, error) {
+	return DefaultDatasource.DayState(ctx, n)
+}
+
+// CurrentHourState returns the current state of the hourly replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func CurrentHourState(ctx context.Context) (HourSeqNum, *State, error) {
+	return DefaultDatasource.CurrentHourState(ctx)
+}
+
+// HourState returns the state of the given hourly replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func HourState(ctx context.Context, n HourSeqNum) (*State, error) {
+	return DefaultDatasource.HourState(ctx, n)
+}
+
+// CurrentMinuteState returns the current state of the minutely replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func CurrentMinuteState(ctx context.Context) (MinuteSeqNum, *State, error) {
+	return DefaultDatasource.CurrentMinuteState(ctx)
+}
+
+// MinuteState returns the state of the given minutely replication.
+// Delegates to the DefaultDatasource and uses its http.Client to make the request.
+func MinuteState(ctx context.Context, n MinuteSeqNum) (*State, error) {
+	return DefaultDatasource.MinuteState(ctx, n)
+}
+
 // Example:
 // ---
 // #Sat Jul 16 06:14:03 UTC 2016
