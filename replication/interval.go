@@ -130,6 +130,21 @@ func (ds *Datasource) DayState(ctx context.Context, n DaySeqNum) (*State, error)
 	return ds.fetchState(ctx, n)
 }
 
+// CurrentMinuteState returns the current state of the minutely replication.
+func (ds *Datasource) CurrentMinuteState(ctx context.Context) (MinuteSeqNum, *State, error) {
+	s, err := ds.MinuteState(ctx, 0)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return MinuteSeqNum(s.SeqNum), s, err
+}
+
+// MinuteState returns the state of the given minutely replication.
+func (ds *Datasource) MinuteState(ctx context.Context, n MinuteSeqNum) (*State, error) {
+	return ds.fetchState(ctx, n)
+}
+
 func (ds *Datasource) baseSeqURL(sn SeqNum) string {
 	n := sn.Uint64()
 	return fmt.Sprintf("%s/replication/%s/%03d/%03d/%03d",
