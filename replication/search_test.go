@@ -2,6 +2,7 @@ package replication
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"testing"
 	"time"
@@ -128,6 +129,110 @@ func TestFindBound(t *testing.T) {
 				t.Errorf("incorrect upper seq number: %v != %v", upper.SeqNum, tc.upper)
 			}
 		})
+	}
+}
+
+func TestMinuteStateAt(t *testing.T) {
+	liveOnly(t)
+	ctx := context.Background()
+	base := time.Date(2012, 9, 1, 0, 0, 0, 0, time.UTC)
+	now := time.Date(2022, 9, 1, 0, 0, 0, 0, time.UTC)
+	diff := int64(now.Sub(base)/time.Second + 10)
+	r := rand.New(rand.NewSource(42))
+	for i := 0; i < 10; i++ {
+		secs := r.Int63n(diff)
+		timestamp := base.Add(time.Duration(secs) * time.Second)
+		t.Logf("n: %d  timestamp: %v", i, timestamp)
+		_, state, err := MinuteStateAt(ctx, timestamp)
+		if err != nil {
+			t.Fatalf("failed to get state: %e", err)
+		}
+
+		if timestamp.After(state.Timestamp) {
+			_, current, err := CurrentMinuteState(ctx)
+			if err != nil {
+				t.Fatalf("could not get current state: %e", err)
+			}
+
+			if current.SeqNum != state.SeqNum {
+				t.Logf("state: %+v", state)
+				t.Fatalf("if timstamp is before, it must be the current timestamp")
+			}
+
+			continue
+		}
+
+		if state.SeqNum == minMinute {
+			// timestamp was before the first state
+			continue
+		}
+
+		// state's timestamp is after the desired one
+		// get previous to make sure it before the desired one
+		previous, err := MinuteState(ctx, MinuteSeqNum(state.SeqNum-1))
+		if err != nil {
+			t.Fatalf("could not get previous state: %e", err)
+		}
+
+		if !previous.Timestamp.Before(timestamp) {
+			t.Logf("prev:  %+v", previous)
+			t.Logf("state: %+v", state)
+			t.Fatalf("previus state not before timestamp")
+		}
+
+		t.Logf("found: %+v", state)
+	}
+}
+
+func TestChangesetStateAt(t *testing.T) {
+	liveOnly(t)
+	ctx := context.Background()
+	base := time.Date(2016, 9, 15, 0, 0, 0, 0, time.UTC)
+	now := time.Date(2022, 9, 1, 0, 0, 0, 0, time.UTC)
+	diff := int64(now.Sub(base)/time.Second + 10)
+	r := rand.New(rand.NewSource(42))
+	for i := 0; i < 10; i++ {
+		secs := r.Int63n(diff)
+		timestamp := base.Add(time.Duration(secs) * time.Second)
+		t.Logf("n: %d  timestamp: %v", i, timestamp)
+		_, state, err := ChangesetStateAt(ctx, timestamp)
+		if err != nil {
+			t.Fatalf("failed to get state: %e", err)
+		}
+
+		if timestamp.After(state.Timestamp) {
+			_, current, err := CurrentChangesetState(ctx)
+			if err != nil {
+				t.Fatalf("could not get current state: %e", err)
+			}
+
+			if current.SeqNum != state.SeqNum {
+				t.Logf("state: %+v", state)
+				t.Fatalf("if timstamp is before, it must be the current timestamp")
+			}
+
+			continue
+		}
+
+		if state.SeqNum == minChangeset {
+			// timestamp was before the first state
+			continue
+		}
+
+		// state's timestamp is after the desired one
+		// get previous to make sure it before the desired one
+		previous, err := ChangesetState(ctx, ChangesetSeqNum(state.SeqNum-1))
+		if err != nil {
+			t.Fatalf("could not get previous state: %e", err)
+		}
+
+		if !previous.Timestamp.Before(timestamp) {
+			t.Logf("prev:  %+v", previous)
+			t.Logf("state: %+v", state)
+			t.Fatalf("previus state not before timestamp")
+		}
+
+		t.Logf("found: %+v", state)
 	}
 }
 

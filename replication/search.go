@@ -7,9 +7,10 @@ import (
 
 const (
 	// the valid minimum state number on planet.osm.org
-	minMinute = 1 // up to 2012-09-12T08:15:45Z
-	minHour   = 1 // up to 2013-07-14T12:00:00Z
-	minDay    = 1 // up to 2012-09-13T00:00:00Z
+	minChangeset = 2007990 // 2016-09-07 10:45:02.148547780 Z
+	minMinute    = 1       // up to 2012-09-12T08:15:45Z
+	minHour      = 1       // up to 2013-07-14T12:00:00Z
+	minDay       = 1       // up to 2012-09-13T00:00:00Z
 )
 
 type stater struct {
