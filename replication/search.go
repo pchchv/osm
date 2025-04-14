@@ -5,10 +5,95 @@ import (
 	"time"
 )
 
+const (
+	// the valid minimum state number on planet.osm.org
+	minMinute = 1 // up to 2012-09-12T08:15:45Z
+	minHour   = 1 // up to 2013-07-14T12:00:00Z
+	minDay    = 1 // up to 2012-09-13T00:00:00Z
+)
+
 type stater struct {
 	Min     uint64
 	Current func(context.Context) (*State, error)
 	State   func(context.Context, uint64) (*State, error)
+}
+
+// DayStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+func (ds *Datasource) DayStateAt(ctx context.Context, timestamp time.Time) (DaySeqNum, *State, error) {
+	s := &stater{
+		Min: minDay,
+		Current: func(ctx context.Context) (*State, error) {
+			_, s, err := ds.CurrentDayState(ctx)
+			return s, err
+		},
+		State: func(ctx context.Context, n uint64) (*State, error) {
+			return ds.DayState(ctx, DaySeqNum(n))
+		},
+	}
+	state, err := searchTimestamp(ctx, s, timestamp)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return DaySeqNum(state.SeqNum), state, nil
+}
+
+// HourStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+func (ds *Datasource) HourStateAt(ctx context.Context, timestamp time.Time) (HourSeqNum, *State, error) {
+	s := &stater{
+		Min: minHour,
+		Current: func(ctx context.Context) (*State, error) {
+			_, s, err := ds.CurrentHourState(ctx)
+			return s, err
+		},
+		State: func(ctx context.Context, n uint64) (*State, error) {
+			return ds.HourState(ctx, HourSeqNum(n))
+		},
+	}
+	state, err := searchTimestamp(ctx, s, timestamp)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return HourSeqNum(state.SeqNum), state, nil
+}
+
+// MinuteStateAt returns the replication state/sequence number that contains data for the given timestamp.
+// This would be the first replication state written after the timestamp.
+// If the timestamp is after all current replication state the most recent will be returned.
+// The caller can check for this case using state.Before(givenTimestamp).
+//
+// This call can do 20+ requests to the binary search the replication states.
+// Use sparingly or use a mirror.
+func (ds *Datasource) MinuteStateAt(ctx context.Context, timestamp time.Time) (MinuteSeqNum, *State, error) {
+	s := &stater{
+		Min: minMinute,
+		Current: func(ctx context.Context) (*State, error) {
+			_, s, err := ds.CurrentMinuteState(ctx)
+			return s, err
+		},
+		State: func(ctx context.Context, n uint64) (*State, error) {
+			return ds.MinuteState(ctx, MinuteSeqNum(n))
+		},
+	}
+	state, err := searchTimestamp(ctx, s, timestamp)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return MinuteSeqNum(state.SeqNum), state, nil
 }
 
 func findBound(ctx context.Context, s *stater, upper *State, timestamp time.Time) (*State, *State, error) {
