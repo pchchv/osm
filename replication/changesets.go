@@ -32,6 +32,21 @@ func (n ChangesetSeqNum) Uint64() uint64 {
 	return uint64(n)
 }
 
+// ChangesetState returns the state for the given changeset replication.
+// There are no state files before 2007990. In that case a 404 error is returned.
+func (ds *Datasource) ChangesetState(ctx context.Context, n ChangesetSeqNum) (*State, error) {
+	return ds.fetchChangesetState(ctx, n)
+}
+
+// CurrentChangesetState returns the current state of the changeset replication.
+func (ds *Datasource) CurrentChangesetState(ctx context.Context) (ChangesetSeqNum, *State, error) {
+	s, err := ds.fetchChangesetState(ctx, 0)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return ChangesetSeqNum(s.SeqNum), s, err
+}
 
 func (ds *Datasource) baseChangesetURL(cn ChangesetSeqNum) string {
 	n := cn.Uint64()
