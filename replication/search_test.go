@@ -1,8 +1,135 @@
 package replication
 
-import "time"
+import (
+	"context"
+	"net/http"
+	"testing"
+	"time"
+)
 
 var baseTime = time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)
+
+func TestSearchTimestamp(t *testing.T) {
+	t.Skip()
+	ctx := context.Background()
+	ts := &stater{
+		Min:     1,
+		Current: func(ctx context.Context) (*State, error) { return buildState(50), nil },
+		State: func(ctx context.Context, n uint64) (*State, error) {
+			states := map[uint64]*State{
+				5:  buildState(5),
+				10: buildState(10),
+				15: buildState(15),
+				20: buildState(20),
+				25: buildState(25),
+				30: buildState(30),
+			}
+
+			s := states[n]
+			if s == nil {
+				return nil, &UnexpectedStatusCodeError{Code: http.StatusNotFound}
+			}
+
+			return s, nil
+		},
+	}
+	cases := []struct {
+		name     string
+		time     time.Time
+		expected uint64
+	}{
+		{
+			name:     "before",
+			time:     baseTime,
+			expected: 5,
+		},
+		{
+			name:     "after",
+			time:     baseTime.Add(100 * time.Hour),
+			expected: 50,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, err := searchTimestamp(ctx, ts, tc.time)
+			if err != nil {
+				t.Fatalf("error getting timestamp: %e", err)
+			}
+
+			if s.SeqNum != tc.expected {
+				t.Errorf("incorrect seq number: %v != %v", s.SeqNum, tc.expected)
+			}
+		})
+	}
+}
+
+func TestFindBound(t *testing.T) {
+	ctx := context.Background()
+	ts := &stater{
+		Min:     1,
+		Current: func(ctx context.Context) (*State, error) { return buildState(9), nil },
+		State: func(ctx context.Context, n uint64) (*State, error) {
+			states := map[uint64]*State{
+				3: buildState(3),
+				4: buildState(4),
+				5: buildState(5),
+				6: buildState(6),
+				7: buildState(7),
+				8: buildState(8),
+			}
+			s := states[n]
+			if s == nil {
+				return nil, &UnexpectedStatusCodeError{Code: http.StatusNotFound}
+			}
+
+			return s, nil
+		},
+	}
+	cases := []struct {
+		name  string
+		time  time.Time
+		lower uint64
+		upper uint64
+	}{
+		{
+			name:  "before",
+			time:  baseTime,
+			lower: 3,
+			upper: 3,
+		},
+		{
+			name:  "middle before",
+			time:  baseTime.Add(6 * time.Hour).Add(30 * time.Minute),
+			lower: 5,
+			upper: 9,
+		},
+		{
+			name:  "middle after",
+			time:  baseTime.Add(4 * time.Hour).Add(30 * time.Minute),
+			lower: 3,
+			upper: 5,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			upper, _ := ts.Current(ctx)
+			lower, upper, err := findBound(ctx, ts, upper, tc.time)
+			if err != nil {
+				t.Fatalf("error getting timestamp: %e", err)
+			}
+
+			if lower.SeqNum != tc.lower {
+				t.Errorf("incorrect lower seq number: %v != %v", lower.SeqNum, tc.lower)
+			}
+
+			if upper.SeqNum != tc.upper {
+				t.Errorf("incorrect upper seq number: %v != %v", upper.SeqNum, tc.upper)
+			}
+		})
+	}
+}
 
 // buildState is helper to build "valid" state files.
 func buildState(n int) *State {
