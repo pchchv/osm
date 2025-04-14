@@ -130,6 +130,21 @@ func (ds *Datasource) DayState(ctx context.Context, n DaySeqNum) (*State, error)
 	return ds.fetchState(ctx, n)
 }
 
+// CurrentHourState returns the current state of the hourly replication.
+func (ds *Datasource) CurrentHourState(ctx context.Context) (HourSeqNum, *State, error) {
+	s, err := ds.HourState(ctx, 0)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return HourSeqNum(s.SeqNum), s, err
+}
+
+// HourState returns the state of the given hourly replication.
+func (ds *Datasource) HourState(ctx context.Context, n HourSeqNum) (*State, error) {
+	return ds.fetchState(ctx, n)
+}
+
 // CurrentMinuteState returns the current state of the minutely replication.
 func (ds *Datasource) CurrentMinuteState(ctx context.Context) (MinuteSeqNum, *State, error) {
 	s, err := ds.MinuteState(ctx, 0)
