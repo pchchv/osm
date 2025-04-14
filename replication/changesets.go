@@ -48,6 +48,17 @@ func (ds *Datasource) CurrentChangesetState(ctx context.Context) (ChangesetSeqNu
 	return ChangesetSeqNum(s.SeqNum), s, err
 }
 
+// Changesets returns the complete list of changesets in for the given replication sequence.
+func (ds *Datasource) Changesets(ctx context.Context, n ChangesetSeqNum) (osm.Changesets, error) {
+	r, err := ds.changesetReader(ctx, n)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	return changesetDecoder(ctx, r)
+}
+
 func (ds *Datasource) baseChangesetURL(cn ChangesetSeqNum) string {
 	n := cn.Uint64()
 	return fmt.Sprintf("%s/replication/%s/%03d/%03d/%03d", ds.baseURL(), cn.Dir(), n/1000000, (n%1000000)/1000, n%1000)
@@ -100,6 +111,32 @@ func (ds *Datasource) fetchChangesetState(ctx context.Context, n ChangesetSeqNum
 	}
 
 	return s, nil
+}
+
+// changesetReader returns a ReadCloser with data from the changeset.
+// Data is gzip compressed, so the caller must decompress it.
+// The caller is responsible for calling Close on the Reader when done.
+func (ds *Datasource) changesetReader(ctx context.Context, n ChangesetSeqNum) (io.ReadCloser, error) {
+	url := ds.baseChangesetURL(n) + ".osm.gz"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := ds.client().Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		return nil, &UnexpectedStatusCodeError{
+			Code: resp.StatusCode,
+			URL:  url,
+		}
+	}
+
+	return resp.Body, nil
 }
 
 func changesetDecoder(ctx context.Context, r io.Reader) (osm.Changesets, error) {
