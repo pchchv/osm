@@ -160,6 +160,21 @@ func (ds *Datasource) MinuteState(ctx context.Context, n MinuteSeqNum) (*State, 
 	return ds.fetchState(ctx, n)
 }
 
+// Day returns the change diff for a given day.
+func (ds *Datasource) Day(ctx context.Context, n DaySeqNum) (*osm.Change, error) {
+	return ds.fetchIntervalData(ctx, ds.changeURL(n))
+}
+
+// Hour returns the change diff for a given hour.
+func (ds *Datasource) Hour(ctx context.Context, n HourSeqNum) (*osm.Change, error) {
+	return ds.fetchIntervalData(ctx, ds.changeURL(n))
+}
+
+// Minute returns the change diff for a given minute.
+func (ds *Datasource) Minute(ctx context.Context, n MinuteSeqNum) (*osm.Change, error) {
+	return ds.fetchIntervalData(ctx, ds.changeURL(n))
+}
+
 func (ds *Datasource) baseSeqURL(sn SeqNum) string {
 	n := sn.Uint64()
 	return fmt.Sprintf("%s/replication/%s/%03d/%03d/%03d",
